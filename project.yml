@@ -23,6 +23,10 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.spendrift.app
+        GENERATE_INFOPLIST_FILE: YES
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        INFOPLIST_KEY_NSCameraUsageDescription: "Spendrift uses the camera to scan receipts so they can be matched to your transactions."
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
@@ -53,6 +57,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.spendrift.app.widgets
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
         INFOPLIST_KEY_CFBundleDisplayName: Spendrift Widgets
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
     info:
