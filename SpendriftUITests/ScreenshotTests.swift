@@ -3,11 +3,13 @@ import XCTest
 /// Drives the full app — onboarding through every tab — capturing a named
 /// screenshot at each step. CI exports the attachments as the
 /// `simulator-screenshots` artifact.
+@MainActor
 final class ScreenshotTests: XCTestCase {
 
     var app: XCUIApplication!
 
-    override func setUp() {
+    // Async so it hops onto the MainActor (XCUIApplication is MainActor-isolated).
+    override func setUp() async throws {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launch()
