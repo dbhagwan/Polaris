@@ -73,18 +73,54 @@ jobs:
             --time "9:41" --batteryLevel 100 --batteryState charged \
             --cellularBars 4 --wifiBars 3 --operatorName "" || true
 
-      - name: Build and run UI screenshot tests
+      - name: Build for testing
         run: |
           set -o pipefail
-          xcodebuild test \
+          xcodebuild build-for-testing \
+            -project Polaris.xcodeproj \
+            -scheme Polaris \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+      - name: Run UI screenshot tests (screen-recorded)
+        run: |
+          set -o pipefail
+          # The UI test session doubles as the video walkthrough: record the
+          # simulator for the duration, finalize after tests with SIGINT.
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo \
+            --codec h264 --force walkthrough.mp4 &
+          echo $! > video.pid
+          xcodebuild test-without-building \
             -project Polaris.xcodeproj \
             -scheme Polaris \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
             -resultBundlePath TestResults.xcresult \
             -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 600 \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+            -default-test-execution-time-allowance 600
+
+      - name: Finalize walkthrough video
+        if: always()
+        run: |
+          if [ -f video.pid ]; then
+            PID="$(cat video.pid)"
+            kill -INT "$PID" 2>/dev/null || true
+            # recordVideo needs a moment after SIGINT to write the moov atom.
+            for _ in $(seq 1 30); do
+              kill -0 "$PID" 2>/dev/null || break
+              sleep 1
+            done
+          fi
+          ls -la walkthrough.mp4 || true
+
+      - name: Upload walkthrough video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walkthrough-video
+          path: walkthrough.mp4
+          if-no-files-found: ignore
 
       - name: Export screenshots from test results
         if: always()
