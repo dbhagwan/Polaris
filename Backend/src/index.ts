@@ -212,5 +212,5 @@ function mapAccountKind(type: string, subtype: string): string {
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
-  console.log(`Spendrift backend listening on :${port}`);
+  console.log(`Polaris backend listening on :${port}`);
 });

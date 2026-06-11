@@ -22,7 +22,7 @@ export const plaid = new PlaidApi(configuration);
 export async function createLinkToken(userId: string): Promise<string> {
   const response = await plaid.linkTokenCreate({
     user: { client_user_id: userId },
-    client_name: "Spendrift",
+    client_name: "Polaris",
     products: [Products.Transactions],
     // Liabilities/investments can be added per-institution later:
     // optional_products: [Products.Liabilities, Products.Investments],

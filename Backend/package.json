@@ -1,8 +1,8 @@
 {
-  "name": "spendrift-backend",
+  "name": "polaris-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Spendrift backend: Plaid token exchange, webhooks, sync orchestration, and AI enrichment.",
+  "description": "Polaris backend: Plaid token exchange, webhooks, sync orchestration, and AI enrichment.",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -1,4 +1,4 @@
--- Spendrift backend schema (PostgreSQL).
+-- Polaris backend schema (PostgreSQL).
 -- Plaid access tokens live ONLY here, never on devices.
 
 CREATE TABLE IF NOT EXISTS users (

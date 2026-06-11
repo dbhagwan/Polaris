@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Spendrift is an AI-first personal finance copilot for iOS 26+/iPadOS 26+ (Swift 6, SwiftUI, SwiftData, WidgetKit, Swift Charts, VisionKit) with a TypeScript backend scaffold for Plaid integration and AI orchestration. The hero feature is **Safe to Spend Today** — everything else feeds or explains that number.
+Polaris is an AI-first personal finance copilot for iOS 26+/iPadOS 26+ (Swift 6, SwiftUI, SwiftData, WidgetKit, Swift Charts, VisionKit) with a TypeScript backend scaffold for Plaid integration and AI orchestration. The hero feature is **Safe to Spend Today** — everything else feeds or explains that number.
 
 ## Build & Run
 
@@ -12,12 +12,12 @@ The Xcode project is generated, not checked in:
 
 ```bash
 xcodegen generate        # requires: brew install xcodegen
-open Spendrift.xcodeproj
+open Polaris.xcodeproj
 ```
 
-Targets: `Spendrift` (app) and `SpendriftWidgets` (widget extension, shares `Core/Models`, `Core/Utilities`, and `SharedSnapshotStore.swift` via project.yml source entries). When adding a model or utility the widgets need, no project change is required; for other shared files, update the `SpendriftWidgets.sources` list in `project.yml`.
+Targets: `Polaris` (app) and `PolarisWidgets` (widget extension, shares `Core/Models`, `Core/Utilities`, and `SharedSnapshotStore.swift` via project.yml source entries). When adding a model or utility the widgets need, no project change is required; for other shared files, update the `PolarisWidgets.sources` list in `project.yml`.
 
-The app defaults to **mock mode** (`AppEnvironment(useMocks: true)` in `App/SpendriftApp.swift`) — `MockSyncService` seeds `PreviewContent/SampleData.swift` and everything runs without a backend.
+The app defaults to **mock mode** (`AppEnvironment(useMocks: true)` in `App/PolarisApp.swift`) — `MockSyncService` seeds `PreviewContent/SampleData.swift` and everything runs without a backend.
 
 Backend:
 
@@ -54,6 +54,8 @@ Icons: `python3 scripts/generate_icons.py` (Pillow).
 
 ## Design system
 
-**Dark-first glass** (Robinhood/Apple Stocks direction): the app targets iOS 26 and uses real Liquid Glass (`.glassEffect`) — it forces dark mode (`.preferredColorScheme(.dark)` in `SpendriftApp`) and every screen sits on `AppBackground` (black + aurora accent glows). `Card` renders `.glassEffect(.regular, in:)`; List screens use `.scrollContentBackground(.hidden)` + `.glassListRow()`. One accent color (mint, `Assets.xcassets/AccentColor`). Liquid Glass lives only in `Card`/`glassListRow` in `Core/DesignSystem/Theme.swift`. Building requires Xcode 26 (CI selects it explicitly).
+**Adaptive glass** (Robinhood/Apple Stocks direction): iOS 26 real Liquid Glass (`.glassEffect`) over `AppBackground` — an aurora backdrop that adapts to light/dark via `colorScheme` (appearance preference in `@AppStorage("appearance")`, picker in Settings). `Card` renders `.glassEffect(.regular.interactive(), in:)`; List screens use `.scrollContentBackground(.hidden)` + `.glassListRow()`. One accent color (mint, `Assets.xcassets/AccentColor`). Liquid Glass lives only in `Card`/`glassListRow` in `Core/DesignSystem/Theme.swift`. Building requires Xcode 26 (CI selects it explicitly).
+
+**Interaction conventions:** tab-root pages have **no `navigationTitle`** (the tab bar already says where you are; pushed detail pages keep titles). Rows support hold-to-preview `contextMenu` (transaction preview card, full receipt image). Key actions give haptics via `.sensoryFeedback`. Net Worth is reachable from the Home card (NavigationLink), not just Settings.
 
 Shared components in `Core/DesignSystem/Theme.swift`: `Card`, `AmountText` (respects privacy mode — always use it for currency), `ProgressRing`, `ConfidenceBadge`, `SkeletonBlock`, `EmptyStateView`. Widget financial values must be `privacySensitive()`.

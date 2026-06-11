@@ -1,6 +1,6 @@
-name: Spendrift
+name: Polaris
 options:
-  bundleIdPrefix: com.spendrift
+  bundleIdPrefix: com.polaris
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
@@ -15,18 +15,18 @@ settings:
     DEVELOPMENT_TEAM: ""
 
 targets:
-  Spendrift:
+  Polaris:
     type: application
     platform: iOS
     sources:
-      - Spendrift
+      - Polaris
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.spendrift.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app
         GENERATE_INFOPLIST_FILE: YES
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
-        INFOPLIST_KEY_NSCameraUsageDescription: "Spendrift uses the camera to scan receipts so they can be matched to your transactions."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Polaris uses the camera to scan receipts so they can be matched to your transactions."
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         # CloudKit sync delivers change pushes via silent remote notifications.
         INFOPLIST_KEY_UIBackgroundModes: [remote-notification]
@@ -36,71 +36,71 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: true
     entitlements:
-      path: Spendrift/Spendrift.entitlements
+      path: Polaris/Polaris.entitlements
       properties:
         com.apple.developer.applesignin: [Default]
         com.apple.security.application-groups:
-          - group.com.spendrift.shared
+          - group.com.polaris.shared
         # iCloud sync: SwiftData→CloudKit private database + key-value store
         # for the categorization correction memory.
         com.apple.developer.icloud-services: [CloudKit]
         com.apple.developer.icloud-container-identifiers:
-          - iCloud.com.spendrift.app
+          - iCloud.com.polaris.app
         com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
         aps-environment: development
     dependencies:
-      - target: SpendriftWidgets
+      - target: PolarisWidgets
         embed: true
       # TODO: Add the Plaid Link iOS SDK via SPM once backend is configured:
       # https://github.com/plaid/plaid-link-ios
 
-  SpendriftWidgets:
+  PolarisWidgets:
     type: app-extension
     platform: iOS
     sources:
-      - SpendriftWidgets
+      - PolarisWidgets
       # Widgets share domain models, the design system, and the snapshot store.
-      - path: Spendrift/Core/Models
-      - path: Spendrift/Core/Utilities
-      - path: Spendrift/Core/Persistence/SharedSnapshotStore.swift
+      - path: Polaris/Core/Models
+      - path: Polaris/Core/Utilities
+      - path: Polaris/Core/Persistence/SharedSnapshotStore.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.spendrift.app.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.widgets
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
-        INFOPLIST_KEY_CFBundleDisplayName: Spendrift Widgets
+        INFOPLIST_KEY_CFBundleDisplayName: Polaris Widgets
         INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.widgetkit-extension
     info:
-      path: SpendriftWidgets/Info.plist
+      path: PolarisWidgets/Info.plist
       properties:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
-      path: SpendriftWidgets/SpendriftWidgets.entitlements
+      path: PolarisWidgets/PolarisWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.spendrift.shared
+          - group.com.polaris.shared
 
-  SpendriftUITests:
+  PolarisUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - SpendriftUITests
+      - PolarisUITests
     dependencies:
-      - target: Spendrift
+      - target: Polaris
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.spendrift.app.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.uitests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  Spendrift:
+  Polaris:
     build:
       targets:
-        Spendrift: all
+        Polaris: all
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - SpendriftUITests
+        - PolarisUITests

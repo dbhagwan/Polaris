@@ -77,8 +77,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Spendrift.xcodeproj \
-            -scheme Spendrift \
+            -project Polaris.xcodeproj \
+            -scheme Polaris \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
             -resultBundlePath TestResults.xcresult \

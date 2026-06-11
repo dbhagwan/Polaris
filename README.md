@@ -1,17 +1,17 @@
-# Spendrift
+# Polaris
 
-An AI-first personal finance copilot for iOS and iPadOS. Spendrift syncs your bank accounts, reads your receipts, learns your spending behavior, forecasts where the month is heading, and answers one question every day: **what's safe to spend today?**
+An AI-first personal finance copilot for iOS and iPadOS. Polaris syncs your bank accounts, reads your receipts, learns your spending behavior, forecasts where the month is heading, and answers one question every day: **what's safe to spend today?**
 
 <p>
-  <img src="Spendrift/Resources/Assets.xcassets/AppIcon.appiconset/icon-dark.png" width="96" alt="Spendrift icon" />
+  <img src="Polaris/Resources/Assets.xcassets/AppIcon.appiconset/icon-dark.png" width="96" alt="Polaris icon" />
 </p>
 
 ## What's in this repo
 
 | Path | What it is |
 |---|---|
-| `Spendrift/` | SwiftUI app (iOS 26+ / iPadOS 26+, Swift 6, Liquid Glass) |
-| `SpendriftWidgets/` | WidgetKit extension — Home Screen + Lock Screen widgets |
+| `Polaris/` | SwiftUI app (iOS 26+ / iPadOS 26+, Swift 6, Liquid Glass) |
+| `PolarisWidgets/` | WidgetKit extension — Home Screen + Lock Screen widgets |
 | `Backend/` | TypeScript backend scaffold: Plaid token exchange, webhooks, sync, AI orchestration |
 | `project.yml` | [XcodeGen](https://github.com/yonaskolb/XcodeGen) project definition |
 | `scripts/generate_icons.py` | Regenerates the app icons |
@@ -47,10 +47,10 @@ Requirements: macOS with Xcode 26+, [XcodeGen](https://github.com/yonaskolb/Xcod
 ```bash
 brew install xcodegen
 xcodegen generate
-open Spendrift.xcodeproj
+open Polaris.xcodeproj
 ```
 
-Then build and run the `Spendrift` scheme. **The app runs fully in mock mode by default** (`AppEnvironment(useMocks: true)` in `SpendriftApp.swift`): it seeds six months of realistic accounts, transactions, receipts, and net-worth history, so every screen — including onboarding, receipt scanning UI, and widgets — is exercisable without a backend or Plaid credentials.
+Then build and run the `Polaris` scheme. **The app runs fully in mock mode by default** (`AppEnvironment(useMocks: true)` in `PolarisApp.swift`): it seeds six months of realistic accounts, transactions, receipts, and net-worth history, so every screen — including onboarding, receipt scanning UI, and widgets — is exercisable without a backend or Plaid credentials.
 
 To run against a real backend, flip `useMocks` to `false` and point `BackendAPI.baseURL` at your deployment.
 
@@ -70,7 +70,7 @@ Requirements: Node 20+, PostgreSQL.
 ```bash
 cd Backend
 cp .env.example .env   # fill in Plaid + Anthropic credentials
-createdb spendrift && psql spendrift < src/db/schema.sql
+createdb polaris && psql polaris < src/db/schema.sql
 npm install
 npm run dev            # http://localhost:3000
 ```
@@ -79,7 +79,7 @@ Endpoints: `POST /plaid/link-token`, `POST /plaid/exchange`, `POST /webhooks/pla
 
 ## Widgets
 
-`SpendriftWidgets` ships Safe to Spend (small/medium/large + Lock Screen), Spend Pace, Budget Remaining ring, Net Worth, Upcoming Bills, and an AI Alert widget. All widgets read a precomputed snapshot from the App Group container (`SharedSnapshotStore`) — the app writes it after every sync/AI recomputation and reloads timelines, so widgets stay fresh without burning the WidgetKit refresh budget. Financial values are marked `privacySensitive()`.
+`PolarisWidgets` ships Safe to Spend (small/medium/large + Lock Screen), Spend Pace, Budget Remaining ring, Net Worth, Upcoming Bills, and an AI Alert widget. All widgets read a precomputed snapshot from the App Group container (`SharedSnapshotStore`) — the app writes it after every sync/AI recomputation and reloads timelines, so widgets stay fresh without burning the WidgetKit refresh budget. Financial values are marked `privacySensitive()`.
 
 ## Icons
 

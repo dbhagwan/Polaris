@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate the minimal Spendrift app icons (light, dark, tinted).
+"""Generate the minimal Polaris app icons (light, dark, tinted).
 
 Design: a thin upward trend line ending in a four-point sparkle — the AI
 copilot reading your money's trajectory. One accent color, no gradients.
 
 Usage: python3 scripts/generate_icons.py
-Outputs 1024x1024 PNGs into Spendrift/Resources/Assets.xcassets/AppIcon.appiconset/
+Outputs 1024x1024 PNGs into Polaris/Resources/Assets.xcassets/AppIcon.appiconset/
 """
 
 from PIL import Image, ImageDraw
@@ -23,7 +23,7 @@ INK_LINE = (24, 33, 32, 255)
 
 OUT = os.path.join(
     os.path.dirname(__file__), "..",
-    "Spendrift", "Resources", "Assets.xcassets", "AppIcon.appiconset",
+    "Polaris", "Resources", "Assets.xcassets", "AppIcon.appiconset",
 )
 
 
