@@ -18,6 +18,16 @@ struct SettingsView: View {
                 NavigationLink("Net Worth") { NetWorthView() }
             }
 
+            Section {
+                Label {
+                    LabeledContent("iCloud Sync", value: "On")
+                } icon: {
+                    Image(systemName: "icloud").foregroundStyle(Theme.accent)
+                }
+            } footer: {
+                Text("Budgets, settings, transactions, and bank connections follow your Apple ID. Sign in on a new device and everything is already set up.")
+            }
+
             Section("Privacy") {
                 Toggle("Privacy mode (blur amounts)", isOn: $appEnvironment.privacyModeEnabled)
                 if let profile {

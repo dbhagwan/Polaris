@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class Budget {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     /// Total monthly budget across all spend categories.
-    var monthlyTotal: Decimal
+    var monthlyTotal: Decimal = 0
     /// Day of month the budget period starts (1–28).
-    var periodStartDay: Int
-    var currencyCode: String
-    var createdAt: Date
-    var updatedAt: Date
+    var periodStartDay: Int = 1
+    var currencyCode: String = "USD"
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
 
     @Relationship(deleteRule: .cascade, inverse: \BudgetCategory.budget)
     var categories: [BudgetCategory] = []
@@ -49,11 +49,11 @@ final class Budget {
 
 @Model
 final class BudgetCategory {
-    @Attribute(.unique) var id: UUID
-    var categoryRaw: String
-    var monthlyLimit: Decimal
+    var id: UUID = UUID()
+    var categoryRaw: String = "miscellaneous"
+    var monthlyLimit: Decimal = 0
     /// True if this limit came from the AI recommendation rather than manual entry.
-    var isAIRecommended: Bool
+    var isAIRecommended: Bool = false
 
     var budget: Budget?
 
@@ -77,16 +77,16 @@ final class BudgetCategory {
 
 @Model
 final class UserProfile {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     var appleUserID: String?
-    var displayName: String
-    var currencyCode: String
-    var privacyModeEnabled: Bool
-    var appLockEnabled: Bool
+    var displayName: String = ""
+    var currencyCode: String = "USD"
+    var privacyModeEnabled: Bool = false
+    var appLockEnabled: Bool = false
     /// Categories the user excluded from safe-to-spend, as raw values.
-    var excludedSafeToSpendCategories: [String]
-    var onboardingCompleted: Bool
-    var createdAt: Date
+    var excludedSafeToSpendCategories: [String] = []
+    var onboardingCompleted: Bool = false
+    var createdAt: Date = Date.now
 
     init(
         id: UUID = UUID(),
@@ -113,10 +113,10 @@ final class UserProfile {
 
 @Model
 final class NetWorthSnapshot {
-    @Attribute(.unique) var id: UUID
-    var date: Date
-    var totalAssets: Decimal
-    var totalLiabilities: Decimal
+    var id: UUID = UUID()
+    var date: Date = Date.now
+    var totalAssets: Decimal = 0
+    var totalLiabilities: Decimal = 0
 
     var netWorth: Decimal { totalAssets - totalLiabilities }
 

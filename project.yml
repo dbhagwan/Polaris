@@ -28,6 +28,8 @@ targets:
         MARKETING_VERSION: 0.1.0
         INFOPLIST_KEY_NSCameraUsageDescription: "Spendrift uses the camera to scan receipts so they can be matched to your transactions."
         INFOPLIST_KEY_UILaunchScreen_Generation: true
+        # CloudKit sync delivers change pushes via silent remote notifications.
+        INFOPLIST_KEY_UIBackgroundModes: [remote-notification]
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -39,6 +41,13 @@ targets:
         com.apple.developer.applesignin: [Default]
         com.apple.security.application-groups:
           - group.com.spendrift.shared
+        # iCloud sync: SwiftData→CloudKit private database + key-value store
+        # for the categorization correction memory.
+        com.apple.developer.icloud-services: [CloudKit]
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.spendrift.app
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
+        aps-environment: development
     dependencies:
       - target: SpendriftWidgets
         embed: true

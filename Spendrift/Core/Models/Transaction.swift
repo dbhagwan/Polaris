@@ -17,27 +17,27 @@ enum CategorySource: String, Codable, Sendable {
 
 @Model
 final class Transaction {
-    @Attribute(.unique) var id: UUID
-    var providerTransactionID: String
-    var accountID: UUID
+    var id: UUID = UUID()
+    var providerTransactionID: String = ""
+    var accountID: UUID = UUID()
     /// Positive = money out, negative = money in (Plaid convention).
-    var amount: Decimal
-    var date: Date
-    var merchantName: String
-    var rawDescription: String
-    var normalizedDescription: String
-    var statusRaw: String
-    var categoryRaw: String
+    var amount: Decimal = 0
+    var date: Date = Date.now
+    var merchantName: String = ""
+    var rawDescription: String = ""
+    var normalizedDescription: String = ""
+    var statusRaw: String = "posted"
+    var categoryRaw: String = "miscellaneous"
     var subcategory: String?
-    var categorySourceRaw: String
+    var categorySourceRaw: String = "ai"
     /// 0...1 confidence in the assigned category. 1.0 for user-set.
-    var categoryConfidence: Double
-    var isTransfer: Bool
-    var isRecurring: Bool
-    var isReimbursement: Bool
-    var isEssential: Bool
-    var isAnomaly: Bool
-    var isHidden: Bool
+    var categoryConfidence: Double = 0.5
+    var isTransfer: Bool = false
+    var isRecurring: Bool = false
+    var isReimbursement: Bool = false
+    var isEssential: Bool = false
+    var isAnomaly: Bool = false
+    var isHidden: Bool = false
     var receiptID: UUID?
     var locationCity: String?
     var locationRegion: String?

@@ -38,12 +38,12 @@ enum AccountRole: String, Codable, Sendable {
 
 @Model
 final class LinkedInstitution {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     /// Plaid item_id; the access token itself lives server-side only.
-    var providerItemID: String
-    var name: String
-    var logoSystemImage: String
-    var requiresRelink: Bool
+    var providerItemID: String = ""
+    var name: String = ""
+    var logoSystemImage: String = "building.columns"
+    var requiresRelink: Bool = false
     var lastSyncedAt: Date?
     var lastSyncError: String?
 
@@ -71,20 +71,20 @@ final class LinkedInstitution {
 
 @Model
 final class Account {
-    @Attribute(.unique) var id: UUID
-    var providerAccountID: String
-    var institutionName: String
-    var name: String
-    var kindRaw: String
-    var subtype: String
-    var mask: String
-    var currentBalance: Decimal
+    var id: UUID = UUID()
+    var providerAccountID: String = ""
+    var institutionName: String = ""
+    var name: String = ""
+    var kindRaw: String = "other"
+    var subtype: String = ""
+    var mask: String = ""
+    var currentBalance: Decimal = 0
     var availableBalance: Decimal?
     var creditLimit: Decimal?
-    var currencyCode: String
-    var isHidden: Bool
-    var roleRaw: String
-    var isClosed: Bool
+    var currencyCode: String = "USD"
+    var isHidden: Bool = false
+    var roleRaw: String = "full"
+    var isClosed: Bool = false
 
     var institution: LinkedInstitution?
 

@@ -26,10 +26,10 @@ struct ReceiptLineItem: Codable, Hashable, Identifiable, Sendable {
 
 @Model
 final class Receipt {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     /// Filename within the app's receipt image directory (and backend object key once uploaded).
-    var imageReference: String
-    var capturedAt: Date
+    var imageReference: String = ""
+    var capturedAt: Date = Date.now
     var merchant: String?
     var purchaseDate: Date?
     var subtotal: Decimal?
@@ -37,13 +37,13 @@ final class Receipt {
     var tip: Decimal?
     var total: Decimal?
     var lineItemsData: Data?
-    var ocrText: String
+    var ocrText: String = ""
     /// 0...1 — quality of the OCR pass itself.
-    var ocrConfidence: Double
+    var ocrConfidence: Double = 0
     /// 0...1 — confidence in the structured extraction (merchant/date/amounts).
-    var extractionConfidence: Double
+    var extractionConfidence: Double = 0
     var inferredCategoryRaw: String?
-    var matchStatusRaw: String
+    var matchStatusRaw: String = "unmatched"
     var matchedTransactionID: UUID?
     /// 0...1 — confidence of the receipt-to-transaction match.
     var matchConfidence: Double?

@@ -17,17 +17,20 @@ struct CategorizationResult: Sendable {
 final class CategorizationEngine: @unchecked Sendable {
     private let ai: AIInferenceService
     /// Normalized merchant → category learned from user corrections.
-    /// Persisted via UserDefaults for v1; move into SwiftData if it grows.
+    /// Stored in iCloud key-value storage so corrections learned on one
+    /// device improve categorization on all of them (UserDefaults kept as a
+    /// local mirror for offline first-launch).
     private var correctionMemory: [String: SpendingCategory]
     private let memoryKey = "categorization.corrections"
 
     init(ai: AIInferenceService) {
         self.ai = ai
-        if let raw = UserDefaults.standard.dictionary(forKey: memoryKey) as? [String: String] {
-            correctionMemory = raw.compactMapValues(SpendingCategory.init(rawValue:))
-        } else {
-            correctionMemory = [:]
-        }
+        let cloud = NSUbiquitousKeyValueStore.default
+        cloud.synchronize()
+        let raw = (cloud.dictionary(forKey: memoryKey) as? [String: String])
+            ?? (UserDefaults.standard.dictionary(forKey: memoryKey) as? [String: String])
+            ?? [:]
+        correctionMemory = raw.compactMapValues(SpendingCategory.init(rawValue:))
     }
 
     func categorize(
@@ -63,14 +66,14 @@ final class CategorizationEngine: @unchecked Sendable {
         )
     }
 
-    /// Record a user correction so the same merchant categorizes correctly next time.
+    /// Record a user correction so the same merchant categorizes correctly
+    /// next time — on every device.
     func learn(merchant: String, category: SpendingCategory) {
         let key = Self.normalizeMerchant(merchant).lowercased()
         correctionMemory[key] = category
-        UserDefaults.standard.set(
-            correctionMemory.mapValues(\.rawValue),
-            forKey: memoryKey
-        )
+        let raw = correctionMemory.mapValues(\.rawValue)
+        NSUbiquitousKeyValueStore.default.set(raw, forKey: memoryKey)
+        UserDefaults.standard.set(raw, forKey: memoryKey)
     }
 
     // MARK: - Merchant normalization
