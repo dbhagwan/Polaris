@@ -19,10 +19,12 @@ enum ModelContainerFactory {
     static func make(inMemory: Bool = false) -> ModelContainer {
         // CloudKit-backed store: the private database syncs budgets, settings,
         // accounts, transactions, and receipts across the user's devices
-        // automatically. Falls back to a local-only store when iCloud is
-        // unavailable (no account signed in, simulators/CI without the
-        // entitlement) — the app keeps working, just without sync.
-        if !inMemory {
+        // automatically. Only attempted when an iCloud account is actually
+        // signed in — otherwise (simulators/CI, signed-out devices) the
+        // CloudKit machinery retries setup forever and keeps the main run
+        // loop busy, so we go straight to the local store.
+        let iCloudAvailable = FileManager.default.ubiquityIdentityToken != nil
+        if !inMemory && iCloudAvailable {
             let cloud = ModelConfiguration(
                 schema: schema,
                 cloudKitDatabase: .private(cloudKitContainerID)

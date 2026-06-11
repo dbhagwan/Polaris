@@ -82,6 +82,8 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
             -resultBundlePath TestResults.xcresult \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 600 \
             CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       - name: Export screenshots from test results
