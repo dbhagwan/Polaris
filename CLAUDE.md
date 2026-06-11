@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Spendrift is an AI-first personal finance copilot for iOS 18+/iPadOS 18+ (Swift 6, SwiftUI, SwiftData, WidgetKit, Swift Charts, VisionKit) with a TypeScript backend scaffold for Plaid integration and AI orchestration. The hero feature is **Safe to Spend Today** — everything else feeds or explains that number.
+Spendrift is an AI-first personal finance copilot for iOS 26+/iPadOS 26+ (Swift 6, SwiftUI, SwiftData, WidgetKit, Swift Charts, VisionKit) with a TypeScript backend scaffold for Plaid integration and AI orchestration. The hero feature is **Safe to Spend Today** — everything else feeds or explains that number.
 
 ## Build & Run
 
@@ -50,6 +50,6 @@ Icons: `python3 scripts/generate_icons.py` (Pillow).
 
 ## Design system
 
-**Dark-first glass** (Robinhood/Apple Stocks direction): the app forces dark mode (`.preferredColorScheme(.dark)` in `SpendriftApp`) and every screen sits on `AppBackground` (black + aurora accent glows). `Card` is translucent `ultraThinMaterial` with a light-catching `Theme.glassStroke` border; List screens use `.scrollContentBackground(.hidden)` + `.glassListRow()`. One accent color (mint, `Assets.xcassets/AccentColor`). When the deployment target moves to iOS 26+, adopt the real Liquid Glass API by swapping the material inside `Card`/`glassListRow` in `Core/DesignSystem/Theme.swift` — that's the only place it lives.
+**Dark-first glass** (Robinhood/Apple Stocks direction): the app targets iOS 26 and uses real Liquid Glass (`.glassEffect`) — it forces dark mode (`.preferredColorScheme(.dark)` in `SpendriftApp`) and every screen sits on `AppBackground` (black + aurora accent glows). `Card` renders `.glassEffect(.regular, in:)`; List screens use `.scrollContentBackground(.hidden)` + `.glassListRow()`. One accent color (mint, `Assets.xcassets/AccentColor`). Liquid Glass lives only in `Card`/`glassListRow` in `Core/DesignSystem/Theme.swift`. Building requires Xcode 26 (CI selects it explicitly).
 
 Shared components in `Core/DesignSystem/Theme.swift`: `Card`, `AmountText` (respects privacy mode — always use it for currency), `ProgressRing`, `ConfidenceBadge`, `SkeletonBlock`, `EmptyStateView`. Widget financial values must be `privacySensitive()`.

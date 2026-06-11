@@ -10,7 +10,7 @@ An AI-first personal finance copilot for iOS and iPadOS. Spendrift syncs your ba
 
 | Path | What it is |
 |---|---|
-| `Spendrift/` | SwiftUI app (iOS 18+ / iPadOS 18+, Swift 6) |
+| `Spendrift/` | SwiftUI app (iOS 26+ / iPadOS 26+, Swift 6, Liquid Glass) |
 | `SpendriftWidgets/` | WidgetKit extension — Home Screen + Lock Screen widgets |
 | `Backend/` | TypeScript backend scaffold: Plaid token exchange, webhooks, sync, AI orchestration |
 | `project.yml` | [XcodeGen](https://github.com/yonaskolb/XcodeGen) project definition |
@@ -42,7 +42,7 @@ Key principles:
 
 ## Getting started (iOS app)
 
-Requirements: macOS with Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+Requirements: macOS with Xcode 26+, [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
 brew install xcodegen

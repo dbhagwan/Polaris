@@ -12,14 +12,6 @@ enum Theme {
     static let cardPadding: CGFloat = 16
     static let sectionSpacing: CGFloat = 14
 
-    /// Light-catching edge for glass surfaces — bright at the top-left,
-    /// fading out, like refraction on real glass.
-    static let glassStroke = LinearGradient(
-        colors: [.white.opacity(0.32), .white.opacity(0.07), .white.opacity(0.02)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
     static func severityColor(_ severity: InsightSeverity) -> Color {
         switch severity {
         case .positive: positive
@@ -57,10 +49,8 @@ struct AppBackground: View {
     }
 }
 
-/// The standard glass card every dashboard surface uses: translucent blur
-/// over the aurora backdrop, with a light-catching border.
-/// When the deployment target moves to iOS 26+, swap the material here for
-/// `.glassEffect()` — this is the only place that needs to change.
+/// The standard glass card every dashboard surface uses — real Liquid Glass
+/// (iOS 26) over the aurora backdrop.
 struct Card<Content: View>: View {
     var title: String?
     var systemImage: String?
@@ -87,23 +77,18 @@ struct Card<Content: View>: View {
         }
         .padding(Theme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            .ultraThinMaterial,
+        .glassEffect(
+            .regular,
             in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous)
-                .strokeBorder(Theme.glassStroke, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
     }
 }
 
 extension View {
-    /// Glass treatment for List rows on screens that sit over `AppBackground`.
+    /// Liquid Glass treatment for List rows on screens that sit over `AppBackground`.
     func glassListRow() -> some View {
         listRowBackground(
-            Rectangle().fill(.ultraThinMaterial)
+            Color.clear.glassEffect(.regular, in: Rectangle())
         )
     }
 }
