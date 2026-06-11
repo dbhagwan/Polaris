@@ -82,7 +82,7 @@ final class PlaidLinkService {
             configuration.onExit = { exit in
                 MainActor.assumeIsolated {
                     self.handler = nil
-                    continuation.resume(throwing: LinkError.exited(exit.error?.localizedDescription))
+                    continuation.resume(throwing: LinkError.exited(exit.error?.errorMessage))
                 }
             }
 
