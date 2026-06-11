@@ -12,6 +12,9 @@ struct SpendriftApp: App {
         WindowGroup {
             RootView()
                 .environment(appEnvironment)
+                // Dark-first, like Stocks/Robinhood — the glass design system
+                // is built for dark surfaces.
+                .preferredColorScheme(.dark)
         }
         .modelContainer(container)
     }

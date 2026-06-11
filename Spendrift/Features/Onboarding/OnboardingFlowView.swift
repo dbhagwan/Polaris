@@ -25,7 +25,7 @@ struct OnboardingFlowView: View {
                 .padding(24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .animation(.snappy, value: step)
     }
 

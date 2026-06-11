@@ -8,9 +8,17 @@ enum Theme {
     static let negative = Color(red: 0.85, green: 0.32, blue: 0.30)
     static let warning = Color(red: 0.88, green: 0.62, blue: 0.18)
 
-    static let cardCornerRadius: CGFloat = 16
+    static let cardCornerRadius: CGFloat = 20
     static let cardPadding: CGFloat = 16
     static let sectionSpacing: CGFloat = 14
+
+    /// Light-catching edge for glass surfaces — bright at the top-left,
+    /// fading out, like refraction on real glass.
+    static let glassStroke = LinearGradient(
+        colors: [.white.opacity(0.32), .white.opacity(0.07), .white.opacity(0.02)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 
     static func severityColor(_ severity: InsightSeverity) -> Color {
         switch severity {
@@ -22,7 +30,37 @@ enum Theme {
     }
 }
 
-/// The standard breathable card every dashboard surface uses.
+/// Aurora backdrop: deep black with soft accent glows. Glass surfaces need
+/// color behind them to refract — this is what makes the blur read as glass
+/// instead of flat gray.
+struct AppBackground: View {
+    var body: some View {
+        ZStack {
+            Color.black
+            Circle()
+                .fill(Theme.accent.opacity(0.30))
+                .frame(width: 430, height: 430)
+                .blur(radius: 120)
+                .offset(x: -130, y: -330)
+            Circle()
+                .fill(Color(red: 0.16, green: 0.34, blue: 0.58).opacity(0.32))
+                .frame(width: 400, height: 400)
+                .blur(radius: 110)
+                .offset(x: 170, y: -140)
+            Circle()
+                .fill(Theme.accent.opacity(0.12))
+                .frame(width: 520, height: 520)
+                .blur(radius: 140)
+                .offset(x: 60, y: 430)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// The standard glass card every dashboard surface uses: translucent blur
+/// over the aurora backdrop, with a light-catching border.
+/// When the deployment target moves to iOS 26+, swap the material here for
+/// `.glassEffect()` — this is the only place that needs to change.
 struct Card<Content: View>: View {
     var title: String?
     var systemImage: String?
@@ -49,8 +87,24 @@ struct Card<Content: View>: View {
         }
         .padding(Theme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous))
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous)
+                .strokeBorder(Theme.glassStroke, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+    }
+}
+
+extension View {
+    /// Glass treatment for List rows on screens that sit over `AppBackground`.
+    func glassListRow() -> some View {
+        listRowBackground(
+            Rectangle().fill(.ultraThinMaterial)
+        )
     }
 }
 

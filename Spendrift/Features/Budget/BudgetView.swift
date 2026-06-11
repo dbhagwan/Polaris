@@ -34,7 +34,7 @@ struct BudgetView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .navigationTitle("Budget")
         .toolbar {
             if budget != nil {

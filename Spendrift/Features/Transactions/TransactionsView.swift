@@ -54,6 +54,7 @@ struct TransactionsView: View {
                         .swipeActions(edge: .trailing) {
                             swipeActions(for: transaction)
                         }
+                        .glassListRow()
                     }
                 }
             }
@@ -68,6 +69,8 @@ struct TransactionsView: View {
                 .listRowBackground(Color.clear)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
         .navigationTitle("Transactions")
         .navigationDestination(for: UUID.self) { id in
             if let transaction = transactions.first(where: { $0.id == id }) {

@@ -50,4 +50,6 @@ Icons: `python3 scripts/generate_icons.py` (Pillow).
 
 ## Design system
 
-One accent color (mint, `Assets.xcassets/AccentColor`), no gradients. Use the shared components in `Core/DesignSystem/Theme.swift`: `Card`, `AmountText` (respects privacy mode — always use it for currency), `ProgressRing`, `ConfidenceBadge`, `SkeletonBlock`, `EmptyStateView`. Widget financial values must be `privacySensitive()`.
+**Dark-first glass** (Robinhood/Apple Stocks direction): the app forces dark mode (`.preferredColorScheme(.dark)` in `SpendriftApp`) and every screen sits on `AppBackground` (black + aurora accent glows). `Card` is translucent `ultraThinMaterial` with a light-catching `Theme.glassStroke` border; List screens use `.scrollContentBackground(.hidden)` + `.glassListRow()`. One accent color (mint, `Assets.xcassets/AccentColor`). When the deployment target moves to iOS 26+, adopt the real Liquid Glass API by swapping the material inside `Card`/`glassListRow` in `Core/DesignSystem/Theme.swift` — that's the only place it lives.
+
+Shared components in `Core/DesignSystem/Theme.swift`: `Card`, `AmountText` (respects privacy mode — always use it for currency), `ProgressRing`, `ConfidenceBadge`, `SkeletonBlock`, `EmptyStateView`. Widget financial values must be `privacySensitive()`.

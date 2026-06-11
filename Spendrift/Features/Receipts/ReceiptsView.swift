@@ -56,6 +56,7 @@ struct ReceiptsView: View {
                 } label: {
                     ReceiptRow(receipt: receipt)
                 }
+                .glassListRow()
             }
 
             if visible.isEmpty && !isProcessing {
@@ -69,6 +70,8 @@ struct ReceiptsView: View {
                 .listRowBackground(Color.clear)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
         .navigationTitle("Receipts")
         .searchable(text: $searchText, prompt: "Merchant or amount")
         .toolbar {

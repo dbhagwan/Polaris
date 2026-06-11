@@ -34,7 +34,7 @@ struct HomeView: View {
                 content
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .navigationTitle("Spendrift")
         .toolbar {
             // iPad reaches Settings via the sidebar; iPhone gets it here.

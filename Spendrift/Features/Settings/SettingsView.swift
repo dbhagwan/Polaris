@@ -64,6 +64,9 @@ struct SettingsView: View {
                 LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev")
             }
         }
+        .glassListRow()
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
         .navigationTitle("Settings")
     }
 

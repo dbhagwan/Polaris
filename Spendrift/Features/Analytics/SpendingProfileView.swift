@@ -36,7 +36,7 @@ struct SpendingProfileView: View {
                 .padding(.top, 80)
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .navigationTitle("Spending Profile")
     }
 

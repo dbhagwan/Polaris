@@ -54,7 +54,7 @@ struct NetWorthView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppBackground())
         .navigationTitle("Net Worth")
     }
 

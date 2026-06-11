@@ -54,6 +54,9 @@ struct AccountsView: View {
                 .listRowBackground(Color.clear)
             }
         }
+        .glassListRow()
+        .scrollContentBackground(.hidden)
+        .background(AppBackground())
         .navigationTitle("Accounts")
         .refreshable { await appEnvironment.sync(context: modelContext) }
     }
