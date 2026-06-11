@@ -70,10 +70,31 @@ final class ScreenshotTests: XCTestCase {
         captureTab("Receipts", screenshot: "10-receipts")
         captureTab("Spending Profile", screenshot: "11-spending-profile")
         captureTab("Budget", screenshot: "12-budget")
-        captureTab("Accounts", screenshot: "13-accounts")
+
+        // Accounts and Net Worth live under Settings on iPhone (5-tab limit).
+        captureTab("Home", screenshot: nil)
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10), "Settings gear should be in the Home toolbar")
+        settings.tap()
+        sleep(1)
+        snap("13-settings")
+
+        let accounts = app.buttons["Accounts"].firstMatch
+        XCTAssertTrue(accounts.waitForExistence(timeout: 10), "Accounts link should be in Settings")
+        accounts.tap()
+        sleep(2)
+        snap("14-accounts")
+
+        app.navigationBars.buttons.firstMatch.tap() // back to Settings
+        let netWorth = app.buttons["Net Worth"].firstMatch
+        if netWorth.waitForExistence(timeout: 10) {
+            netWorth.tap()
+            sleep(2)
+            snap("15-net-worth")
+        }
     }
 
-    private func captureTab(_ tab: String, screenshot name: String) {
+    private func captureTab(_ tab: String, screenshot name: String?) {
         let button = app.tabBars.buttons[tab]
         guard button.waitForExistence(timeout: 10) else {
             XCTFail("Tab \(tab) not found")
@@ -81,7 +102,9 @@ final class ScreenshotTests: XCTestCase {
         }
         button.tap()
         sleep(2) // allow content + charts to render
-        snap(name)
+        if let name {
+            snap(name)
+        }
     }
 
     private func snap(_ name: String) {

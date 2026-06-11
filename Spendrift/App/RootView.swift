@@ -32,8 +32,10 @@ enum AppSection: String, CaseIterable, Identifiable {
         }
     }
 
-    /// iPhone tab bar (Net Worth and Settings live inside other sections there).
-    static let phoneTabs: [AppSection] = [.home, .transactions, .receipts, .analytics, .budget, .accounts]
+    /// iPhone tab bar — iOS shows at most 5 items before collapsing into
+    /// "More", so Accounts lives in Settings there (and Net Worth inside
+    /// Home/Profile). The iPad sidebar shows everything.
+    static let phoneTabs: [AppSection] = [.home, .transactions, .receipts, .analytics, .budget]
     static let padSidebar: [AppSection] = allCases
 }
 

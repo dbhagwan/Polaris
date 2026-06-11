@@ -12,6 +12,12 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var appEnvironment = appEnvironment
         Form {
+            // On iPhone, Accounts and Net Worth aren't tabs (5-tab limit).
+            Section {
+                NavigationLink("Accounts") { AccountsView() }
+                NavigationLink("Net Worth") { NetWorthView() }
+            }
+
             Section("Privacy") {
                 Toggle("Privacy mode (blur amounts)", isOn: $appEnvironment.privacyModeEnabled)
                 if let profile {
