@@ -39,20 +39,21 @@ struct DonutSpinView: View {
     }
 
     var body: some View {
-        ZStack {
-            AppBackground()
-            VStack(spacing: 24) {
-                header
-                Spacer(minLength: 0)
-                spinningDonut
-                breakdown
-                Text("Drag to spin — the front slice opens up")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Spacer(minLength: 0)
-            }
-            .padding()
+        VStack(spacing: 24) {
+            header
+            Spacer(minLength: 0)
+            spinningDonut
+            breakdown
+            Text("Drag to spin — the front slice opens up")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Spacer(minLength: 0)
         }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // As a .background the aurora is clipped to the screen; as a ZStack
+        // sibling its oversized blur circles would widen the layout.
+        .background(AppBackground())
         .sensoryFeedback(.selection, trigger: selected?.id)
     }
 
