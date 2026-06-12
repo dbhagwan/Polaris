@@ -125,6 +125,7 @@ final class ScreenshotTests: XCTestCase {
 
         // ── Net Worth (now a first-class tab) ───────────────────────
         captureTab("Net Worth", screenshot: "13-net-worth\(suffix)")
+        sleep(1) // let the chart settle before the next snapshot query
         // Allocation ring swaps in via the top-right toggle.
         let allocationToggle = app.buttons["Allocation"].firstMatch
         if allocationToggle.waitForExistence(timeout: 5) {

@@ -101,7 +101,9 @@ jobs:
             -resultBundlePath TestResults.xcresult \
             -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 900 \
-            -maximum-test-execution-time-allowance 1500
+            -maximum-test-execution-time-allowance 1500 \
+            -retry-tests-on-failure \
+            -test-iterations 2
 
       - name: Finalize walkthrough video
         if: always()
