@@ -253,19 +253,52 @@ struct FoundationModelsAIService: AIInferenceService {
         var recommendations: [NarrativeItem]
     }
 
+    /// The model can call this tool to pull a category's actual monthly
+    /// trajectory before writing about it — structured tool-calling, not RAG.
+    struct CategoryHistoryTool: Tool {
+        let name = "categorySpendHistory"
+        let description = "Monthly spend totals in dollars for one category over the last six months, oldest to newest."
+
+        @Generable
+        struct Arguments {
+            @Guide(description: "The category id to look up", .anyOf([
+                "income", "housing", "utilities", "groceries", "dining", "travel",
+                "transportation", "shopping", "entertainment", "health", "insurance",
+                "debtPayments", "transfers", "investments", "fees", "subscriptions",
+                "taxes", "miscellaneous",
+            ]))
+            var category: String
+        }
+
+        let history: [String: [Double]]
+
+        func call(arguments: Arguments) async throws -> ToolOutput {
+            guard let totals = history[arguments.category], !totals.isEmpty else {
+                return ToolOutput("No history recorded for \(arguments.category).")
+            }
+            let line = totals.map { "$" + String(format: "%.0f", $0) }.joined(separator: ", ")
+            return ToolOutput("\(arguments.category) monthly totals, oldest to newest: \(line)")
+        }
+    }
+
     func generateNarratives(
         profile: SpendingProfile,
         forecast: SpendForecast,
-        risk: BudgetRiskAssessment
+        risk: BudgetRiskAssessment,
+        monthlyCategoryHistory: [String: [Double]]
     ) async -> (insights: [SpendingInsight], recommendations: [Recommendation]) {
         guard isModelAvailable else {
-            return await fallback.generateNarratives(profile: profile, forecast: forecast, risk: risk)
+            return await fallback.generateNarratives(profile: profile, forecast: forecast, risk: risk, monthlyCategoryHistory: monthlyCategoryHistory)
         }
         do {
-            let session = LanguageModelSession(instructions: """
+            let session = LanguageModelSession(
+                tools: monthlyCategoryHistory.isEmpty ? [] : [CategoryHistoryTool(history: monthlyCategoryHistory)],
+                instructions: """
                 You are the narration layer of a personal-finance copilot. You \
                 receive pre-computed financial analysis and write concise \
                 insights (observations) and recommendations (concrete actions). \
+                Use the categorySpendHistory tool to check a category's actual \
+                trajectory before claiming it is rising or falling. \
                 Every claim must cite a number from the input in its evidence. \
                 Never invent data, never give generic advice, never moralize.
                 """)
@@ -299,7 +332,7 @@ struct FoundationModelsAIService: AIInferenceService {
             }
             return (Array(insights), Array(recommendations))
         } catch {
-            return await fallback.generateNarratives(profile: profile, forecast: forecast, risk: risk)
+            return await fallback.generateNarratives(profile: profile, forecast: forecast, risk: risk, monthlyCategoryHistory: monthlyCategoryHistory)
         }
     }
 

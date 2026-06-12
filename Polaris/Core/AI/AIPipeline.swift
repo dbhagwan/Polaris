@@ -151,8 +151,14 @@ final class AIPipeline {
             // real allowance, not from themselves.
             RolloverLedger.record(allowance: decision.todayAllowance - decision.rolloverCredit)
 
-            // 9. Narrative layer (structured in, structured out).
-            let narratives = await ai.generateNarratives(profile: profile, forecast: forecast, risk: risk)
+            // 9. Narrative layer (structured in, structured out). The model
+            // can query real per-category history through a tool call.
+            let narratives = await ai.generateNarratives(
+                profile: profile,
+                forecast: forecast,
+                risk: risk,
+                monthlyCategoryHistory: Self.monthlyCategoryHistory(of: transactions)
+            )
             insights = narratives.insights
             recommendations = narratives.recommendations
         }
@@ -175,6 +181,22 @@ final class AIPipeline {
             safeToSpendWeek: safeToSpend?.weekAllowance,
             currencyCode: userProfile?.currencyCode ?? "USD"
         )
+
+        // 12. Live Activity + watch: today's remaining allowance, everywhere.
+        let spentTodayDiscretionary = transactions
+            .filter { $0.countsAsDiscretionarySpend && Calendar.current.isDateInToday($0.date) }
+            .reduce(Decimal(0)) { $0 + $1.amount }
+        let elapsedDays = forecast.periodStart.daysUntil(.now)
+        let totalDays = max(1, forecast.periodStart.daysUntil(forecast.periodEnd))
+        let idealSoFar = (budget?.monthlyTotal ?? 0).doubleValue * Double(elapsedDays) / Double(totalDays)
+        let livePaceDelta = idealSoFar > 0 ? forecast.spentToDate.doubleValue / idealSoFar - 1 : 0
+        await LiveActivityController.sync(
+            decision: safeToSpend,
+            spentTodayDiscretionary: spentTodayDiscretionary,
+            paceDelta: livePaceDelta,
+            currencyCode: userProfile?.currencyCode ?? "USD"
+        )
+        WatchSync.shared.push()
 
         try? context.save()
         lastRunAt = .now
@@ -204,6 +226,28 @@ final class AIPipeline {
             sibling.needsAIReview = false
         }
         await recompute(in: context)
+    }
+
+    /// Category id → last-6-month spend totals (oldest→newest), the data
+    /// behind the narrative model's history tool.
+    private static func monthlyCategoryHistory(of transactions: [Transaction]) -> [String: [Double]] {
+        let calendar = Calendar.current
+        var history: [String: [Double]] = [:]
+        for offset in stride(from: 5, through: 0, by: -1) {
+            guard let month = calendar.date(byAdding: .month, value: -offset, to: .now) else { continue }
+            let monthTotals = Dictionary(
+                grouping: transactions.filter {
+                    $0.countsAsSpend && calendar.isDate($0.date, equalTo: month, toGranularity: .month)
+                },
+                by: { $0.category.rawValue }
+            ).mapValues { group in
+                group.reduce(Decimal(0)) { $0 + $1.amount }.doubleValue
+            }
+            for id in SpendingCategory.allCases.map(\.rawValue) {
+                history[id, default: []].append(monthTotals[id] ?? 0)
+            }
+        }
+        return history
     }
 
     private func recordNetWorthSnapshot(accounts: [Account], in context: ModelContext) {

@@ -10,6 +10,7 @@ struct PolarisWidgetBundle: WidgetBundle {
         NetWorthWidget()
         UpcomingBillsWidget()
         AIAlertWidget()
+        SafeToSpendLiveActivity()
     }
 }
 

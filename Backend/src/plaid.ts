@@ -73,3 +73,27 @@ export async function fetchBalances(accessToken: string) {
   const response = await plaid.accountsBalanceGet({ access_token: accessToken });
   return response.data.accounts;
 }
+
+/**
+ * Investment positions for items that support the investments product.
+ * Callers should tolerate failure — most items are transactions-only.
+ */
+export async function fetchHoldings(accessToken: string) {
+  const response = await plaid.investmentsHoldingsGet({ access_token: accessToken });
+  const securities = new Map(
+    response.data.securities.map((security) => [security.security_id, security])
+  );
+  return response.data.holdings.map((holding) => {
+    const security = securities.get(holding.security_id);
+    return {
+      providerHoldingId: `${holding.account_id}:${holding.security_id}`,
+      plaidAccountId: holding.account_id,
+      symbol: security?.ticker_symbol ?? "",
+      name: security?.name ?? "Unknown security",
+      quantity: holding.quantity,
+      price: holding.institution_price,
+      value: holding.institution_value,
+      costBasis: holding.cost_basis,
+    };
+  });
+}

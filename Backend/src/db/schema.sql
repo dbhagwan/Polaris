@@ -67,6 +67,19 @@ CREATE TABLE IF NOT EXISTS receipts (
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS holdings (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_id          UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    provider_holding_id TEXT NOT NULL UNIQUE,   -- plaid account_id:security_id
+    symbol              TEXT NOT NULL DEFAULT '',
+    name                TEXT NOT NULL DEFAULT '',
+    quantity            NUMERIC(20, 6) NOT NULL DEFAULT 0,
+    price               NUMERIC(20, 6) NOT NULL DEFAULT 0,
+    value               NUMERIC(20, 2) NOT NULL DEFAULT 0,
+    cost_basis          NUMERIC(20, 2),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Append-only job queue for sync/enrichment work.
 -- TODO(production): replace with a real queue (pg-boss, BullMQ, SQS).
 CREATE TABLE IF NOT EXISTS jobs (

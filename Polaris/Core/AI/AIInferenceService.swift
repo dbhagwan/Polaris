@@ -86,10 +86,13 @@ protocol AIInferenceService: Sendable {
 
     /// Turns computed profile/forecast/risk structures into concise,
     /// evidence-tied insight and recommendation copy.
+    /// `monthlyCategoryHistory` maps category id → last-6-month totals
+    /// (oldest→newest); tool-calling implementations let the model query it.
     func generateNarratives(
         profile: SpendingProfile,
         forecast: SpendForecast,
-        risk: BudgetRiskAssessment
+        risk: BudgetRiskAssessment,
+        monthlyCategoryHistory: [String: [Double]]
     ) async -> (insights: [SpendingInsight], recommendations: [Recommendation])
 }
 
@@ -148,7 +151,8 @@ struct MockAIService: AIInferenceService {
     func generateNarratives(
         profile: SpendingProfile,
         forecast: SpendForecast,
-        risk: BudgetRiskAssessment
+        risk: BudgetRiskAssessment,
+        monthlyCategoryHistory: [String: [Double]] = [:]
     ) async -> (insights: [SpendingInsight], recommendations: [Recommendation]) {
         var insights: [SpendingInsight] = []
         var recommendations: [Recommendation] = []

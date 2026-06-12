@@ -1,3 +1,4 @@
+import CloudKit
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
@@ -12,6 +13,10 @@ struct SettingsView: View {
     @State private var exportingCSV = false
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage(NotificationScheduler.digestEnabledKey) private var weeklyDigestEnabled = false
+    @AppStorage(LiveActivityController.enabledKey) private var liveActivityEnabled = false
+    @State private var walletImportStatus: String?
+    @State private var householdShare: CKShare?
+    @State private var householdStatus: String?
 
     private var profile: UserProfile? { profiles.first }
 
@@ -72,6 +77,12 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle(isOn: $liveActivityEnabled) {
+                    Label("Live Activity", systemImage: "bolt.badge.clock")
+                }
+                .onChange(of: liveActivityEnabled) {
+                    Task { await appEnvironment.pipeline.recompute(in: modelContext) }
+                }
                 Toggle(isOn: $weeklyDigestEnabled) {
                     Label("Weekly digest", systemImage: "bell.badge")
                 }
@@ -94,7 +105,33 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                Button {
+                    Task {
+                        guard let budget = budgets.first else {
+                            householdStatus = "Set up a budget first."
+                            return
+                        }
+                        do {
+                            householdShare = try await HouseholdSharing.shared.shareBudget(budget)
+                        } catch {
+                            householdStatus = "Sharing needs an iCloud account signed in."
+                        }
+                    }
+                } label: {
+                    Label("Share budget with household…", systemImage: "person.2")
+                }
+                if let householdStatus {
+                    Text(householdStatus).font(.caption).foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Household")
+            } footer: {
+                Text("Invite a partner to see the shared budget. Accepting on their device requires iCloud.")
+            }
+
             Section("Data") {
+                walletImportRow
                 Button("Export transactions (CSV)") { exportingCSV = true }
                     .fileExporter(
                         isPresented: $exportingCSV,
@@ -118,6 +155,14 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(AppBackground())
         .navigationTitle("Settings")
+        .sheet(isPresented: Binding(
+            get: { householdShare != nil },
+            set: { if !$0 { householdShare = nil } }
+        )) {
+            if let householdShare {
+                CloudSharingView(share: householdShare, container: HouseholdSharing.shared.ckContainer)
+            }
+        }
     }
 
     private var aiExplainer: some View {
@@ -134,6 +179,37 @@ struct SettingsView: View {
             .font(.subheadline)
         }
         .navigationTitle("How AI is used")
+    }
+
+    /// Apple Card / Apple Cash import via FinanceKit — on-device, no Plaid.
+    /// Hidden where Wallet financial data isn't available; the importer
+    /// reports a clear status when the entitlement is missing.
+    @ViewBuilder
+    private var walletImportRow: some View {
+        #if canImport(FinanceKit)
+        let importer = FinanceKitImporter()
+        if importer.isSupported {
+            Button {
+                Task {
+                    switch await importer.importAll(into: modelContext, pipeline: appEnvironment.pipeline) {
+                    case .unavailable:
+                        walletImportStatus = "Wallet data isn't available on this device."
+                    case .denied:
+                        walletImportStatus = "Access declined — or this build lacks Apple's FinanceKit entitlement."
+                    case .imported(let transactions, let accounts):
+                        walletImportStatus = "Imported \(transactions) transactions across \(accounts) new accounts."
+                    }
+                }
+            } label: {
+                Label("Import from Apple Wallet", systemImage: "wallet.bifold")
+            }
+            if let walletImportStatus {
+                Text(walletImportStatus)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        #endif
     }
 
     // MARK: - Bindings

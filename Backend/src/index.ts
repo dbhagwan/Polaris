@@ -1,7 +1,7 @@
 import express from "express";
 import { Pool } from "pg";
 import { classifyTransaction } from "./ai.js";
-import { createLinkToken, exchangePublicToken, fetchBalances, syncTransactions } from "./plaid.js";
+import { createLinkToken, exchangePublicToken, fetchBalances, fetchHoldings, syncTransactions } from "./plaid.js";
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -84,7 +84,20 @@ app.get("/sync", async (req, res) => {
      ORDER BY t.date DESC LIMIT 5000`,
     [userId]
   );
-  res.json({ accounts: accounts.rows, transactions: transactions.rows });
+  const holdings = await db.query(
+    `SELECT h.provider_holding_id, a.plaid_account_id AS provider_account_id,
+            h.symbol, h.name, h.quantity, h.price, h.value, h.cost_basis
+     FROM holdings h
+     JOIN accounts a ON a.id = h.account_id
+     JOIN plaid_items i ON i.id = a.item_id
+     WHERE i.user_id = $1`,
+    [userId]
+  );
+  res.json({
+    accounts: accounts.rows,
+    transactions: transactions.rows,
+    holdings: holdings.rows,
+  });
 });
 
 // MARK: AI enrichment endpoint (called by app for low-confidence fallbacks)
@@ -193,6 +206,32 @@ async function runTransactionSync(payload: { itemId?: string; plaidItemId?: stri
   }
   for (const removal of removed) {
     await db.query(`DELETE FROM transactions WHERE plaid_transaction_id = $1`, [removal.transaction_id]);
+  }
+
+  // Investment holdings — best-effort, most items are transactions-only.
+  try {
+    const holdings = await fetchHoldings(accessToken);
+    for (const holding of holdings) {
+      await db.query(
+        `INSERT INTO holdings (account_id, provider_holding_id, symbol, name, quantity, price, value, cost_basis)
+         SELECT a.id, $2, $3, $4, $5, $6, $7, $8 FROM accounts a WHERE a.plaid_account_id = $1
+         ON CONFLICT (provider_holding_id) DO UPDATE SET
+           quantity = EXCLUDED.quantity, price = EXCLUDED.price,
+           value = EXCLUDED.value, cost_basis = EXCLUDED.cost_basis, updated_at = now()`,
+        [
+          holding.plaidAccountId,
+          holding.providerHoldingId,
+          holding.symbol,
+          holding.name,
+          holding.quantity,
+          holding.price,
+          holding.value,
+          holding.costBasis,
+        ]
+      );
+    }
+  } catch {
+    // Item doesn't support investments — nothing to do.
   }
 
   await db.query(

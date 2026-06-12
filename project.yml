@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.polaris
   deploymentTarget:
     iOS: "26.0"
+    watchOS: "11.0"
   createIntermediateGroups: true
 
 packages:
@@ -34,6 +35,7 @@ targets:
         MARKETING_VERSION: 0.1.0
         INFOPLIST_KEY_NSCameraUsageDescription: "Polaris uses the camera to scan receipts so they can be matched to your transactions."
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Polaris uses Face ID to unlock your financial data when app lock is on."
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         # CloudKit sync delivers change pushes via silent remote notifications.
         INFOPLIST_KEY_UIBackgroundModes: [remote-notification]
@@ -57,6 +59,8 @@ targets:
         aps-environment: development
     dependencies:
       - target: PolarisWidgets
+        embed: true
+      - target: PolarisWatch
         embed: true
       - package: LinkKit
 
@@ -86,6 +90,25 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.polaris.shared
+
+  PolarisWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - PolarisWatch
+      # The watch renders the same precomputed snapshot models.
+      - path: Polaris/Core/Models
+      - path: Polaris/Core/Utilities
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.watchkitapp
+        GENERATE_INFOPLIST_FILE: YES
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        TARGETED_DEVICE_FAMILY: 4
+        INFOPLIST_KEY_WKApplication: YES
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.polaris.app
+        INFOPLIST_KEY_CFBundleDisplayName: Polaris
 
   PolarisUITests:
     type: bundle.ui-testing

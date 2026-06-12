@@ -33,6 +33,8 @@ final class AppEnvironment {
         // Plaid credentials; real mode presents the LinkKit SDK.
         self.plaidLink = PlaidLinkService(api: api, simulated: useMocks)
         self.receiptCapture = ReceiptCaptureService(ai: ai)
+        // Paired-watch channel comes up early so the first recompute lands.
+        WatchSync.shared.activate()
     }
 
     /// Mock-backed environment for previews and local development.
