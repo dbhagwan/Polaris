@@ -296,13 +296,26 @@ struct NetWorthView: View {
         .foregroundStyle(color)
     }
 
+    /// Investment accounts push their holdings; everything else is static.
+    @ViewBuilder
     private func accountRow(_ account: Account, negative: Bool) -> some View {
-        HStack {
+        let row = HStack {
             Text("\(account.name) ••\(account.mask)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
+            if account.kind == .investment {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
             AmountText(amount: negative ? -account.currentBalance : account.currentBalance, font: .subheadline)
+        }
+        if account.kind == .investment {
+            NavigationLink { HoldingsView(account: account) } label: { row }
+                .buttonStyle(.plain)
+        } else {
+            row
         }
     }
 }

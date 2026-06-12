@@ -191,9 +191,66 @@ enum SampleData {
             matchConfidence: 0.88
         )
         basketReceipt.returnBy = calendar.date(byAdding: .day, value: 88, to: now)
+        // Same items five weeks earlier at lower prices — feeds the
+        // personal price index.
+        let earlierReceipt = Receipt(
+            imageReference: "sample-receipt-0.jpg",
+            capturedAt: calendar.date(byAdding: .day, value: -38, to: now) ?? now,
+            merchant: "Trader Joe's",
+            purchaseDate: calendar.date(byAdding: .day, value: -38, to: now),
+            subtotal: 97.10, tax: 3.90, total: 101.00,
+            lineItems: [
+                ReceiptLineItem(name: "Organic Bananas", quantity: 1, price: 1.69),
+                ReceiptLineItem(name: "Mandarin Orange Chicken", quantity: 2, price: 9.38),
+                ReceiptLineItem(name: "Sparkling Water 12pk", quantity: 1, price: 3.99),
+                ReceiptLineItem(name: "Unexpected Cheddar", quantity: 1, price: 4.29),
+            ],
+            ocrText: "TRADER JOE'S\n...",
+            ocrConfidence: 0.93,
+            extractionConfidence: 0.87,
+            inferredCategory: .groceries,
+            matchStatus: .matched,
+            matchConfidence: 0.9
+        )
+        context.insert(earlierReceipt)
         context.insert(matchedReceipt)
         context.insert(unmatchedReceipt)
         context.insert(basketReceipt)
+
+        // MARK: Goals & holdings
+
+        context.insert(SavingsGoal(
+            name: "Japan trip",
+            emoji: "🗾",
+            targetAmount: 3_000,
+            fundedAmount: 1_240,
+            targetDate: calendar.date(byAdding: .day, value: 120, to: now)
+        ))
+        context.insert(SavingsGoal(
+            name: "Emergency fund",
+            emoji: "🛟",
+            targetAmount: 10_000,
+            fundedAmount: 7_800
+        ))
+
+        let holdings: [(String, String, Decimal, Decimal, Decimal)] = [
+            ("VTI", "Vanguard Total Stock Market ETF", 95, 268.40, 21_400),
+            ("AAPL", "Apple Inc.", 60, 232.10, 11_900),
+            ("NVDA", "NVIDIA Corp.", 48, 171.25, 6_100),
+            ("VXUS", "Vanguard Total Intl Stock ETF", 210, 64.80, 12_400),
+        ]
+        for (symbol, name, quantity, price, costBasis) in holdings {
+            context.insert(Holding(
+                providerHoldingID: "hold-\(symbol)",
+                accountID: brokerage.id,
+                symbol: symbol,
+                name: name,
+                quantity: quantity,
+                price: price,
+                value: quantity * price,
+                costBasis: costBasis
+            ))
+        }
 
         // MARK: Budget
 

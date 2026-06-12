@@ -1,3 +1,4 @@
+import LocalAuthentication
 import SwiftData
 import SwiftUI
 
@@ -46,14 +47,22 @@ struct RootView: View {
     @Query private var profiles: [UserProfile]
 
     @State private var selection: AppSection = .home
+    @State private var isUnlocked = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private var needsOnboarding: Bool {
         !(profiles.first?.onboardingCompleted ?? false)
     }
 
+    private var lockRequired: Bool {
+        (profiles.first?.appLockEnabled ?? false) && !isUnlocked && !needsOnboarding
+    }
+
     var body: some View {
         Group {
-            if needsOnboarding {
+            if lockRequired {
+                lockScreen
+            } else if needsOnboarding {
                 OnboardingFlowView()
             } else if sizeClass == .regular {
                 sidebarLayout
@@ -63,8 +72,48 @@ struct RootView: View {
         }
         .task {
             guard !needsOnboarding else { return }
+            if lockRequired { await unlock() }
             await appEnvironment.sync(context: modelContext)
         }
+        .onChange(of: scenePhase) {
+            // Re-lock when the app leaves the foreground.
+            if scenePhase == .background { isUnlocked = false }
+        }
+    }
+
+    private var lockScreen: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 40, weight: .light))
+                .foregroundStyle(.secondary)
+            Text("Polaris is locked")
+                .font(.headline)
+            Button {
+                Task { await unlock() }
+            } label: {
+                Label("Unlock", systemImage: "faceid")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 6)
+            }
+            .buttonStyle(.glass)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppBackground())
+    }
+
+    private func unlock() async {
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            // No passcode set on device — don't lock the user out of their data.
+            isUnlocked = true
+            return
+        }
+        let success = (try? await context.evaluatePolicy(
+            .deviceOwnerAuthentication,
+            localizedReason: "Unlock your financial data"
+        )) ?? false
+        if success { isUnlocked = true }
     }
 
     /// iPhone: tab bar.

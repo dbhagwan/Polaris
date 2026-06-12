@@ -12,6 +12,9 @@ enum ModelContainerFactory {
         Budget.self,
         BudgetCategory.self,
         NetWorthSnapshot.self,
+        SavingsGoal.self,
+        UserRule.self,
+        Holding.self,
     ]) }
 
     static let cloudKitContainerID = "iCloud.com.polaris.app"

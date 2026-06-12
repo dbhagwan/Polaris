@@ -1,11 +1,15 @@
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @Query private var budgets: [Budget]
+    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
+
+    @State private var exportingCSV = false
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage(NotificationScheduler.digestEnabledKey) private var weeklyDigestEnabled = false
 
@@ -84,9 +88,20 @@ struct SettingsView: View {
 
             Section("AI") {
                 LabeledContent("Engine", value: "Apple Intelligence (on-device)")
+                NavigationLink("Categorization rules") { RulesView() }
                 NavigationLink("How decisions are made") {
                     aiExplainer
                 }
+            }
+
+            Section("Data") {
+                Button("Export transactions (CSV)") { exportingCSV = true }
+                    .fileExporter(
+                        isPresented: $exportingCSV,
+                        document: TransactionsCSV(transactions: transactions),
+                        contentType: .commaSeparatedText,
+                        defaultFilename: "polaris-transactions"
+                    ) { _ in }
             }
 
             Section("Account") {
@@ -158,6 +173,40 @@ struct SettingsView: View {
                 Task { await appEnvironment.pipeline.recompute(in: modelContext) }
             }
         )
+    }
+}
+
+/// CSV of every visible transaction, for the file exporter.
+struct TransactionsCSV: FileDocument {
+    static let readableContentTypes: [UTType] = [.commaSeparatedText]
+
+    var transactions: [Transaction] = []
+    private var rendered: String
+
+    init(transactions: [Transaction]) {
+        self.transactions = transactions
+        var lines = ["date,merchant,amount,category,account,recurring,essential"]
+        for transaction in transactions where transaction.supersededByProviderID == nil {
+            let merchant = transaction.normalizedDescription.replacingOccurrences(of: ",", with: " ")
+            lines.append([
+                transaction.date.formatted(.iso8601.year().month().day()),
+                merchant,
+                "\(transaction.amount)",
+                transaction.category.rawValue,
+                transaction.accountID.uuidString,
+                "\(transaction.isRecurring)",
+                "\(transaction.isEssential)",
+            ].joined(separator: ","))
+        }
+        rendered = lines.joined(separator: "\n")
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        rendered = ""
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(rendered.utf8))
     }
 }
 

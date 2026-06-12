@@ -39,6 +39,8 @@ struct BackendAPI: Sendable {
     struct SyncPayload: Decodable, Sendable {
         let accounts: [AccountDTO]
         let transactions: [TransactionDTO]
+        /// Investment positions; optional so older backends keep decoding.
+        let holdings: [HoldingDTO]?
     }
 
     func fetchSyncPayload() async throws -> SyncPayload {
@@ -104,6 +106,17 @@ struct AccountDTO: Decodable, Sendable {
             currencyCode: currencyCode
         )
     }
+}
+
+struct HoldingDTO: Decodable, Sendable {
+    var providerHoldingID: String
+    var providerAccountID: String
+    var symbol: String
+    var name: String
+    var quantity: Decimal
+    var price: Decimal
+    var value: Decimal
+    var costBasis: Decimal?
 }
 
 struct TransactionDTO: Decodable, Sendable {

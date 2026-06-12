@@ -1,4 +1,5 @@
 import Charts
+import SwiftData
 import SwiftUI
 
 /// The "Spending DNA" surface — renders the structured SpendingProfile
@@ -7,6 +8,7 @@ import SwiftUI
 struct SpendingProfileView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Query private var receipts: [Receipt]
 
     private var profile: SpendingProfile? { appEnvironment.pipeline.profile }
 
@@ -36,6 +38,9 @@ struct SpendingProfileView: View {
                     timingCard(profile)
                     if !profile.overspendTriggers.isEmpty {
                         triggersCard(profile)
+                    }
+                    if let index = PriceIndexEngine.build(from: receipts) {
+                        priceIndexCard(index)
                     }
                 }
                 .padding()
@@ -191,6 +196,37 @@ struct SpendingProfileView: View {
                 Label(trigger, systemImage: "sparkles")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Receipts make this possible: the same item's price tracked across
+    /// repeat purchases — a personal inflation gauge.
+    private func priceIndexCard(_ index: PriceIndexEngine.Index) -> some View {
+        Card(title: "Personal Price Index", systemImage: "tag") {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(index.overallChange.signedPercentString)
+                    .font(.title2.bold())
+                    .monospacedDigit()
+                    .foregroundStyle(index.overallChange > 0.02 ? Theme.negative : index.overallChange < -0.02 ? Theme.positive : .primary)
+                Text("across \(index.itemsTracked) repeat-purchased items")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(index.movers.prefix(4)) { mover in
+                HStack {
+                    Text(mover.name).font(.subheadline).lineLimit(1)
+                    Spacer()
+                    Text("\(mover.firstPrice.currency()) → \(mover.latestPrice.currency())")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                    Text(mover.change.signedPercentString)
+                        .font(.caption.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(mover.change > 0 ? Theme.negative : Theme.positive)
+                        .frame(width: 52, alignment: .trailing)
+                }
             }
         }
     }

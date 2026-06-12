@@ -17,6 +17,8 @@ final class AIPipeline {
     private(set) var recommendations: [Recommendation] = []
     private(set) var lastRunAt: Date?
     private(set) var isRunning = false
+    /// Detected recurring series, exposed for the cash-flow projector.
+    private(set) var recurringSeries: [RecurringDetector.RecurringSeries] = []
 
     let categorization: CategorizationEngine
     private let ai: AIInferenceService
@@ -38,6 +40,13 @@ final class AIPipeline {
         let receipts = (try? context.fetch(FetchDescriptor<Receipt>())) ?? []
         let budget = (try? context.fetch(FetchDescriptor<Budget>()))?.first
         let userProfile = (try? context.fetch(FetchDescriptor<UserProfile>()))?.first
+        let goals = (try? context.fetch(FetchDescriptor<SavingsGoal>())) ?? []
+        let rules = (try? context.fetch(FetchDescriptor<UserRule>())) ?? []
+
+        // User-authored rules join the categorization stack for this run.
+        categorization.userRules = rules
+            .filter(\.isEnabled)
+            .map { ($0.pattern, $0.category, $0.markEssential) }
 
         // 1. Dedupe pending/posted pairs and flag internal transfers.
         RecurringDetector.deduplicatePendingPosted(in: transactions)
@@ -51,6 +60,7 @@ final class AIPipeline {
 
         // 2. Recurring detection → flag transactions in stable series.
         let series = RecurringDetector.detectSeries(in: transactions)
+        recurringSeries = series
         let recurringMerchants = Set(series.map { $0.merchant.lowercased() })
         for transaction in transactions {
             transaction.isRecurring = recurringMerchants.contains(transaction.normalizedDescription.lowercased())
@@ -124,13 +134,22 @@ final class AIPipeline {
 
             let excluded = (userProfile?.excludedSafeToSpendCategories ?? [])
                 .compactMap(SpendingCategory.init(rawValue:))
-            safeToSpend = SafeToSpendEngine.decide(
+            let goalReservation = goals
+                .filter { !$0.isCompleted }
+                .reduce(Decimal(0)) { $0 + $1.dailyReservation() }
+            let decision = SafeToSpendEngine.decide(
                 budget: budget,
                 forecast: forecast,
                 profile: profile,
                 transactions: transactions,
-                excludedCategories: excluded
+                excludedCategories: excluded,
+                goalDailyReservation: goalReservation,
+                rolloverCredit: RolloverLedger.unspentCredit(transactions: transactions)
             )
+            safeToSpend = decision
+            // Record today's base (credit excluded) so streaks compound from
+            // real allowance, not from themselves.
+            RolloverLedger.record(allowance: decision.todayAllowance - decision.rolloverCredit)
 
             // 9. Narrative layer (structured in, structured out).
             let narratives = await ai.generateNarratives(profile: profile, forecast: forecast, risk: risk)

@@ -59,6 +59,12 @@ struct SafeToSpendExplanationView: View {
                     row("Remaining discretionary budget", decision.remainingDiscretionaryBudget)
                     row("Upcoming recurring (discretionary)", -decision.upcomingRecurringDiscretionary)
                     row("Forecasted essential spend (unreserved)", -decision.forecastedRequiredEssentialSpend)
+                    if decision.goalDailyReservation > 0 {
+                        row("Savings goals (per day)", -decision.goalDailyReservation)
+                    }
+                    if decision.rolloverCredit > 0 {
+                        row("Rolled over from yesterday", decision.rolloverCredit)
+                    }
                     LabeledContent("Days left in period", value: "\(decision.remainingDaysInPeriod)")
                 }
                 Section("Behavioral adjustment") {

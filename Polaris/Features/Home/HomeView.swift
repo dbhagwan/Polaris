@@ -12,8 +12,10 @@ struct HomeView: View {
     @Query private var accounts: [Account]
     @Query(sort: \Receipt.capturedAt, order: .reverse) private var receipts: [Receipt]
     @Query private var transactions: [Transaction]
+    @Query(sort: \SavingsGoal.createdAt) private var goals: [SavingsGoal]
 
     @State private var showExplanation = false
+    @State private var showMonthlyStory = false
     @Namespace private var zoomNamespace
 
     private var pipeline: AIPipeline { appEnvironment.pipeline }
@@ -80,11 +82,18 @@ struct HomeView: View {
             if let forecast = pipeline.forecast, !forecast.upcomingRecurringCharges.isEmpty {
                 UpcomingBillsCard(charges: Array(forecast.upcomingRecurringCharges.prefix(4)))
             }
+            goalsCard
             recentReceiptsCard
             netWorthCard
             if let forecast = pipeline.forecast {
-                CashFlowCard(forecast: forecast)
+                NavigationLink {
+                    CashFlowCalendarView()
+                } label: {
+                    CashFlowCard(forecast: forecast)
+                }
+                .buttonStyle(.plain)
             }
+            monthlyStoryCard
             if !pipeline.insights.isEmpty {
                 InsightsCard(insights: Array(pipeline.insights.prefix(3)))
             }
@@ -157,6 +166,73 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .matchedTransitionSource(id: "netWorth", in: zoomNamespace)
+    }
+
+    /// Goal rings, or an invitation to set one. Pushes the full Goals screen.
+    private var goalsCard: some View {
+        NavigationLink {
+            GoalsView()
+        } label: {
+            Card(title: "Goals", systemImage: "flag.checkered") {
+                if goals.isEmpty {
+                    Text("Reserve a slice of each day's allowance toward something you want.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    HStack(spacing: 18) {
+                        ForEach(goals.prefix(3)) { goal in
+                            VStack(spacing: 5) {
+                                ZStack {
+                                    ProgressRing(progress: goal.progress, lineWidth: 5, size: 46)
+                                    Text(goal.emoji).font(.subheadline)
+                                }
+                                Text(goal.name)
+                                    .font(.caption2)
+                                    .lineLimit(1)
+                            }
+                        }
+                        Spacer()
+                    }
+                }
+                HStack {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var monthlyStoryCard: some View {
+        Card {
+            Button {
+                showMonthlyStory = true
+            } label: {
+                HStack {
+                    Image(systemName: "sparkles.tv")
+                        .font(.title3)
+                        .foregroundStyle(Theme.heroGradient)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Your \(Date.now.formatted(.dateTime.month(.wide))) story")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Text("A swipeable recap of the month — shareable.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+        .fullScreenCover(isPresented: $showMonthlyStory) {
+            MonthlyStoryView()
+        }
     }
 
     private var netWorthChange30Days: Decimal? {

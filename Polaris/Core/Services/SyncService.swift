@@ -58,6 +58,32 @@ struct BackendSyncService: SyncService {
             context.insert(transaction)
         }
 
+        // Investment holdings: replace-or-insert by provider id.
+        if let holdingDTOs = payload.holdings {
+            let existingHoldings = (try? context.fetch(FetchDescriptor<Holding>())) ?? []
+            for dto in holdingDTOs {
+                guard let accountID = accountsByProviderID[dto.providerAccountID] else { continue }
+                if let existing = existingHoldings.first(where: { $0.providerHoldingID == dto.providerHoldingID }) {
+                    existing.quantity = dto.quantity
+                    existing.price = dto.price
+                    existing.value = dto.value
+                    existing.costBasis = dto.costBasis
+                    existing.updatedAt = .now
+                } else {
+                    context.insert(Holding(
+                        providerHoldingID: dto.providerHoldingID,
+                        accountID: accountID,
+                        symbol: dto.symbol,
+                        name: dto.name,
+                        quantity: dto.quantity,
+                        price: dto.price,
+                        value: dto.value,
+                        costBasis: dto.costBasis
+                    ))
+                }
+            }
+        }
+
         try context.save()
         await pipeline.recompute(in: context)
     }

@@ -32,6 +32,8 @@ enum SafeToSpendEngine {
         profile: SpendingProfile,
         transactions: [Transaction],
         excludedCategories: [SpendingCategory] = [],
+        goalDailyReservation: Decimal = 0,
+        rolloverCredit: Decimal = 0,
         configuration: Configuration = .default,
         asOf now: Date = .now
     ) -> SafeToSpendDecision {
@@ -64,7 +66,12 @@ enum SafeToSpendEngine {
         let unreservedEssential = max(0, essentialRemaining - essentialBudgeted)
 
         let baseRemaining = max(0, remainingDiscretionary - upcomingDiscretionary - unreservedEssential)
-        let baseDaily = baseRemaining / Decimal(remainingDays)
+        var baseDaily = baseRemaining / Decimal(remainingDays)
+
+        // Savings goals take their cut off the top, visibly.
+        if goalDailyReservation > 0 {
+            baseDaily = max(0, baseDaily - goalDailyReservation)
+        }
 
         // --- Behavioral adjustment layer ---
         var adjustment = 1.0
@@ -96,11 +103,25 @@ enum SafeToSpendEngine {
         }
 
         adjustment = min(configuration.maxAdjustment, max(configuration.minAdjustment, adjustment))
+        if goalDailyReservation > 0 {
+            reasons.append("Savings goals reserve \(goalDailyReservation.currency())/day")
+        }
         if reasons.isEmpty { reasons.append("No behavioral adjustment — spending pattern is steady") }
 
-        let today = max(0, baseDaily * Decimal(adjustment))
-        let week = max(0, today * Decimal(min(7, remainingDays)))
-        let monthRemaining = max(0, baseRemaining * Decimal(adjustment))
+        // Rollover smoothing: yesterday's unspent allowance rolls in, capped
+        // at half of today's base so one frugal day can't double the number.
+        let adjustedDaily = max(0, baseDaily * Decimal(adjustment))
+        let appliedRollover = min(max(0, rolloverCredit), adjustedDaily * Decimal(0.5))
+        if appliedRollover > 0 {
+            reasons.append("Rolled over \(appliedRollover.currency()) unspent from yesterday")
+        }
+
+        let today = adjustedDaily + appliedRollover
+        let week = max(0, adjustedDaily * Decimal(min(7, remainingDays)) + appliedRollover)
+        let monthRemaining = max(
+            0,
+            (baseRemaining - goalDailyReservation * Decimal(remainingDays)) * Decimal(adjustment)
+        )
 
         let confidence = min(0.95, forecast.confidence * (budget.categories.isEmpty ? 0.85 : 1.0))
 
@@ -116,7 +137,9 @@ enum SafeToSpendEngine {
             remainingDaysInPeriod: remainingDays,
             behavioralAdjustment: adjustment,
             adjustmentReasons: reasons,
-            excludedCategories: excludedCategories
+            excludedCategories: excludedCategories,
+            rolloverCredit: appliedRollover,
+            goalDailyReservation: goalDailyReservation
         )
     }
 

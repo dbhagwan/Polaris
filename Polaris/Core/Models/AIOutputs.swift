@@ -134,6 +134,10 @@ struct SafeToSpendDecision: Codable, Sendable, Equatable {
     /// "Dining pace +27% vs. 3-month average → allowance reduced 10%".
     var adjustmentReasons: [String]
     var excludedCategories: [SpendingCategory]
+    /// Unspent allowance rolled in from yesterday (already clamped).
+    var rolloverCredit: Decimal = 0
+    /// Per-day amount reserved by active savings goals.
+    var goalDailyReservation: Decimal = 0
 }
 
 enum InsightSeverity: String, Codable, Sendable {

@@ -22,6 +22,9 @@ final class CategorizationEngine: @unchecked Sendable {
     /// local mirror for offline first-launch).
     private var correctionMemory: [String: SpendingCategory]
     private let memoryKey = "categorization.corrections"
+    /// User-authored rules (substring → category), refreshed by the pipeline
+    /// each recompute. Sit between correction memory and built-in rules.
+    var userRules: [(pattern: String, category: SpendingCategory, essential: Bool)] = []
 
     init(ai: AIInferenceService) {
         self.ai = ai
@@ -45,6 +48,15 @@ final class CategorizationEngine: @unchecked Sendable {
 
         if let learned = correctionMemory[normalized.lowercased()] {
             return result(learned, source: .user, confidence: 0.98)
+        }
+        if let rule = userRules.first(where: { !$0.pattern.isEmpty && normalized.localizedCaseInsensitiveContains($0.pattern) }) {
+            return CategorizationResult(
+                category: rule.category,
+                subcategory: nil,
+                source: .rules,
+                confidence: 0.95,
+                isEssential: rule.essential || rule.category.isTypicallyFixed || rule.category == .groceries
+            )
         }
         if let ruled = Self.ruleMatch(normalized: normalized, amount: amount) {
             return ruled
