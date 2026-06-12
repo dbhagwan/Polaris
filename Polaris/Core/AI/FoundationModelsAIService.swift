@@ -272,12 +272,12 @@ struct FoundationModelsAIService: AIInferenceService {
 
         let history: [String: [Double]]
 
-        func call(arguments: Arguments) async throws -> ToolOutput {
+        func call(arguments: Arguments) async throws -> String {
             guard let totals = history[arguments.category], !totals.isEmpty else {
-                return ToolOutput("No history recorded for \(arguments.category).")
+                return "No history recorded for \(arguments.category)."
             }
             let line = totals.map { "$" + String(format: "%.0f", $0) }.joined(separator: ", ")
-            return ToolOutput("\(arguments.category) monthly totals, oldest to newest: \(line)")
+            return "\(arguments.category) monthly totals, oldest to newest: \(line)"
         }
     }
 
