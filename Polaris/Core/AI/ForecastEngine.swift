@@ -34,9 +34,13 @@ enum ForecastEngine {
         let upcomingTotal = upcoming.reduce(Decimal(0)) { $0 + $1.amount }
 
         // Variable run-rate projection, blended with historical average when
-        // the month is young (early days are noisy).
+        // the month is young (early days are noisy). Anomalies stay in
+        // spentToDate but are excluded from the pace — a one-off outlier
+        // doesn't repeat every remaining day.
         let recurringSoFar = periodSpendTxns.filter(\.isRecurring).reduce(Decimal(0)) { $0 + $1.amount }
-        let variableSoFar = spentToDate - recurringSoFar
+        let anomalySoFar = periodSpendTxns.filter { $0.isAnomaly && !$0.isRecurring }
+            .reduce(Decimal(0)) { $0 + $1.amount }
+        let variableSoFar = spentToDate - recurringSoFar - anomalySoFar
         let variableDailyPace = variableSoFar.doubleValue / Double(elapsedDays)
         let historicalVariableDaily = profile.variableMonthlySpend.doubleValue / Double(totalDays)
         let paceWeight = min(1.0, Double(elapsedDays) / 10.0)
@@ -81,11 +85,12 @@ enum ForecastEngine {
 
         var categoryRisks: [BudgetRiskAssessment.CategoryRisk] = []
         for budgetCategory in budget.categories {
-            let spent = periodTxns
-                .filter { $0.category == budgetCategory.category }
-                .reduce(Decimal(0)) { $0 + $1.amount }
-            // Naive per-category projection: current pace extended to period end.
-            let projected = Decimal(spent.doubleValue / elapsedFraction)
+            let categoryTxns = periodTxns.filter { $0.category == budgetCategory.category }
+            let spent = categoryTxns.reduce(Decimal(0)) { $0 + $1.amount }
+            // Pace extended to period end — but anomalies count once, not
+            // per remaining day.
+            let anomalous = categoryTxns.filter(\.isAnomaly).reduce(Decimal(0)) { $0 + $1.amount }
+            let projected = Decimal((spent - anomalous).doubleValue / elapsedFraction) + anomalous
             let utilization = budgetCategory.monthlyLimit > 0
                 ? (projected / budgetCategory.monthlyLimit).doubleValue
                 : 0

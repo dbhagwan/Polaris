@@ -112,6 +112,17 @@ struct SpendPaceCard: View {
         let total = max(1, forecast.periodStart.daysUntil(forecast.periodEnd))
         let elapsed = max(1, forecast.periodStart.daysUntil(.now))
         let idealFraction = Double(elapsed) / Double(total)
+
+        // With category budgets, pace is measured on discretionary spend vs.
+        // its budget — rent landing on the 1st shouldn't read as "over pace".
+        let discretionary = risk.categoryRisks.filter { $0.category.isDiscretionaryByDefault }
+        let discretionaryBudget = discretionary.reduce(Decimal(0)) { $0 + $1.budgeted }
+        if discretionaryBudget > 0 {
+            let spent = discretionary.reduce(Decimal(0)) { $0 + $1.spent }
+            let ideal = discretionaryBudget.doubleValue * idealFraction
+            return ideal > 0 ? spent.doubleValue / ideal - 1 : 0
+        }
+
         let ideal = forecast.projectedTotalSpend.doubleValue * idealFraction
         guard ideal > 0 else { return 0 }
         return forecast.spentToDate.doubleValue / ideal - 1

@@ -125,7 +125,7 @@ enum SampleData {
 
         // Recent pending + anomalies (statistical outliers for their category).
         add(0, 18.40, "Blue Bottle Coffee", .dining, pending: true)
-        add(1, 482.00, "Apple Store", .shopping, confidence: 0.55)
+        add(1, 289.00, "Apple Store", .shopping, confidence: 0.55)
         add(2, 180.00, "Shell", .transportation)
 
         // A low-confidence uncategorized-ish charge for the correction flow.
@@ -224,14 +224,14 @@ enum SampleData {
             name: "Japan trip",
             emoji: "🗾",
             targetAmount: 3_000,
-            fundedAmount: 1_240,
+            fundedAmount: 2_000,
             targetDate: calendar.date(byAdding: .day, value: 180, to: now)
         ))
         context.insert(SavingsGoal(
             name: "Emergency fund",
             emoji: "🛟",
             targetAmount: 10_000,
-            fundedAmount: 9_200
+            fundedAmount: 9_650
         ))
 
         let holdings: [(String, String, Decimal, Decimal, Decimal)] = [
@@ -255,14 +255,17 @@ enum SampleData {
 
         // MARK: Budget
 
-        let budget = Budget(monthlyTotal: 4_200)
+        let budget = Budget(monthlyTotal: 5_500)
         budget.categories = [
-            BudgetCategory(category: .groceries, monthlyLimit: 560, isAIRecommended: true),
-            BudgetCategory(category: .dining, monthlyLimit: 620, isAIRecommended: true),
-            BudgetCategory(category: .shopping, monthlyLimit: 380, isAIRecommended: true),
-            BudgetCategory(category: .transportation, monthlyLimit: 260, isAIRecommended: true),
-            BudgetCategory(category: .entertainment, monthlyLimit: 130, isAIRecommended: true),
-            BudgetCategory(category: .subscriptions, monthlyLimit: 100),
+            BudgetCategory(category: .housing, monthlyLimit: 1_850, isAIRecommended: true),
+            BudgetCategory(category: .utilities, monthlyLimit: 200, isAIRecommended: true),
+            BudgetCategory(category: .insurance, monthlyLimit: 140, isAIRecommended: true),
+            BudgetCategory(category: .groceries, monthlyLimit: 600, isAIRecommended: true),
+            BudgetCategory(category: .dining, monthlyLimit: 750, isAIRecommended: true),
+            BudgetCategory(category: .shopping, monthlyLimit: 700, isAIRecommended: true),
+            BudgetCategory(category: .transportation, monthlyLimit: 350, isAIRecommended: true),
+            BudgetCategory(category: .entertainment, monthlyLimit: 200, isAIRecommended: true),
+            BudgetCategory(category: .subscriptions, monthlyLimit: 150),
         ]
         context.insert(budget)
 
