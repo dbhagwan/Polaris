@@ -17,6 +17,10 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func testCaptureAllScreens() {
+        // The welcome choreography (line draw → star → copy) starts on
+        // launch; grab real frames fast — CI's recordVideo is ~0.7fps and
+        // misses it entirely. Assembled into a video offline.
+        burst("intro", frames: 30, intervalMs: 150)
         runOnboarding()
         captureAllScreens(suffix: "", capturesOnboardingFollowups: true)
 
@@ -34,6 +38,8 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(getStarted.waitForExistence(timeout: 15), "Welcome screen should appear")
         snap("01-onboarding-welcome")
         getStarted.tap()
+        // The star morphs into the sign-in emblem — capture the transition.
+        burst("morph", frames: 10, intervalMs: 100)
 
         let devSignIn = app.buttons["Continue without signing in (development)"]
         XCTAssertTrue(devSignIn.waitForExistence(timeout: 10), "Sign-in screen should appear")
@@ -311,6 +317,17 @@ final class ScreenshotTests: XCTestCase {
         sleep(2) // allow content + charts to render
         if let name {
             snap(name)
+        }
+    }
+
+    /// Rapid screenshot burst — real rendered frames for animation footage.
+    private func burst(_ prefix: String, frames: Int, intervalMs: UInt32) {
+        for index in 0..<frames {
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = String(format: "anim-%@-%03d", prefix, index)
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            usleep(intervalMs * 1_000)
         }
     }
 
