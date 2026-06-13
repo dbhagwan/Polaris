@@ -13,14 +13,18 @@ final class ScreenshotTests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        // Cinematic mode: the welcome choreography waits out the launch
+        // handshake and auto-advances to sign-in, so the intro burst below
+        // captures the whole sequence as real frames.
+        app.launchArguments += ["--uitest-cinematic"]
         app.launch()
     }
 
     func testCaptureAllScreens() {
-        // The welcome choreography (line draw → star → copy) starts on
-        // launch; grab real frames fast — CI's recordVideo is ~0.7fps and
-        // misses it entirely. Assembled into a video offline.
-        burst("intro", frames: 30, intervalMs: 150)
+        // The welcome choreography (line draw → star → copy → morph to
+        // sign-in) runs while this burst is rolling; CI's recordVideo is
+        // ~0.7fps and misses it entirely. Assembled into a video offline.
+        burst("intro", frames: 48, intervalMs: 140)
         runOnboarding()
         captureAllScreens(suffix: "", capturesOnboardingFollowups: true)
 
@@ -34,12 +38,13 @@ final class ScreenshotTests: XCTestCase {
     // MARK: - Onboarding
 
     private func runOnboarding() {
+        // In cinematic mode the welcome scene advances itself to sign-in
+        // during the intro burst; tap Get Started only if it's still there.
         let getStarted = app.buttons["Get Started"]
-        XCTAssertTrue(getStarted.waitForExistence(timeout: 15), "Welcome screen should appear")
-        snap("01-onboarding-welcome")
-        getStarted.tap()
-        // The star morphs into the sign-in emblem — capture the transition.
-        burst("morph", frames: 10, intervalMs: 100)
+        if getStarted.waitForExistence(timeout: 5), getStarted.isHittable {
+            snap("01-onboarding-welcome")
+            getStarted.tap()
+        }
 
         let devSignIn = app.buttons["Continue without signing in (development)"]
         XCTAssertTrue(devSignIn.waitForExistence(timeout: 10), "Sign-in screen should appear")

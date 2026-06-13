@@ -98,11 +98,23 @@ struct OnboardingFlowView: View {
         }
         .task {
             guard lineProgress == 0 else { return }
+            // Cinematic test mode: the screenshot suite's burst camera needs
+            // the choreography to outlive the XCUITest launch handshake, and
+            // tap() blocks until animations settle — so the scene waits for
+            // the camera, then advances itself.
+            let cinematic = ProcessInfo.processInfo.arguments.contains("--uitest-cinematic")
+            if cinematic {
+                try? await Task.sleep(for: .seconds(3.5))
+            }
             withAnimation(.easeInOut(duration: 1.6)) { lineProgress = 1 }
             try? await Task.sleep(for: .milliseconds(1_400))
             withAnimation(.spring(duration: 0.55, bounce: 0.45)) { showStar = true }
             try? await Task.sleep(for: .milliseconds(450))
             withAnimation(.easeOut(duration: 0.5)) { showWelcomeContent = true }
+            if cinematic {
+                try? await Task.sleep(for: .seconds(1.8))
+                step = .signIn
+            }
         }
     }
 
