@@ -7,7 +7,7 @@ import Security
 /// automatically, and the backend (which owns the Plaid access tokens, keyed
 /// to this user) returns the same linked institutions without re-setup.
 enum KeychainStore {
-    private static let service = "com.polaris.app"
+    private static let service = "com.dbhagwan.polaris"
 
     enum Key: String {
         case sessionToken

@@ -4,7 +4,7 @@ import Foundation
 /// The app writes after every sync/AI recomputation; the widget extension only
 /// reads. Compiled into both targets.
 enum SharedSnapshotStore {
-    static let appGroupID = "group.com.polaris.shared"
+    static let appGroupID = "group.com.dbhagwan.polaris"
     private static let snapshotFilename = "widget-snapshot.json"
 
     private static var snapshotURL: URL? {

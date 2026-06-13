@@ -1,6 +1,6 @@
 name: Polaris
 options:
-  bundleIdPrefix: com.polaris
+  bundleIdPrefix: com.dbhagwan
   deploymentTarget:
     iOS: "26.0"
     watchOS: "11.0"
@@ -37,7 +37,7 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris
         GENERATE_INFOPLIST_FILE: YES
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
@@ -57,12 +57,12 @@ targets:
       properties:
         com.apple.developer.applesignin: [Default]
         com.apple.security.application-groups:
-          - group.com.polaris.shared
+          - group.com.dbhagwan.polaris
         # iCloud sync: SwiftData→CloudKit private database + key-value store
         # for the categorization correction memory.
         com.apple.developer.icloud-services: [CloudKit]
         com.apple.developer.icloud-container-identifiers:
-          - iCloud.com.polaris.app
+          - iCloud.com.dbhagwan.polaris
         com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
         aps-environment: development
     dependencies:
@@ -83,7 +83,7 @@ targets:
       - path: Polaris/Core/Persistence/SharedSnapshotStore.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris.widgets
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         INFOPLIST_KEY_CFBundleDisplayName: Polaris Widgets
@@ -97,7 +97,7 @@ targets:
       path: PolarisWidgets/PolarisWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.polaris.shared
+          - group.com.dbhagwan.polaris
 
   PolarisWatch:
     type: application
@@ -109,13 +109,13 @@ targets:
       - path: Polaris/Core/Utilities
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris.watchkitapp
         GENERATE_INFOPLIST_FILE: YES
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         TARGETED_DEVICE_FAMILY: 4
         INFOPLIST_KEY_WKApplication: YES
-        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.polaris.app
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.dbhagwan.polaris
         INFOPLIST_KEY_CFBundleDisplayName: Polaris
 
   PolarisUITests:
@@ -127,7 +127,7 @@ targets:
       - target: Polaris
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.polaris.app.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris.uitests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:

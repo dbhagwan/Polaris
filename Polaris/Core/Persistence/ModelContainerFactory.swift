@@ -17,7 +17,7 @@ enum ModelContainerFactory {
         Holding.self,
     ]) }
 
-    static let cloudKitContainerID = "iCloud.com.polaris.app"
+    static let cloudKitContainerID = "iCloud.com.dbhagwan.polaris"
 
     static func make(inMemory: Bool = false) -> ModelContainer {
         // CloudKit-backed store: the private database syncs budgets, settings,
