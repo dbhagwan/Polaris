@@ -92,9 +92,11 @@ final class CategorizationEngine: @unchecked Sendable {
         )
     }
 
-    /// Up to 8 correction-memory entries to use as few-shot examples, ones
-    /// sharing a word with this merchant first — so a single correction
-    /// ("Blue Bottle" → dining) also steers similar merchants.
+    /// Correction-memory entries to use as few-shot examples, ones sharing a
+    /// word with this merchant first — so a single correction ("Blue Bottle" →
+    /// dining) also steers similar merchants. We hand over a generous slate
+    /// (most-relevant first); the model service trims to its context window
+    /// (8 on iOS 26, up to 32 on iOS 27's expanded window).
     private func relevantExamples(for merchant: String) -> [TransactionClassificationRequest.UserExample] {
         let tokens = Set(merchant.lowercased().split(separator: " "))
         return correctionMemory
@@ -106,7 +108,7 @@ final class CategorizationEngine: @unchecked Sendable {
                  ))
             }
             .sorted { $0.overlap > $1.overlap }
-            .prefix(8)
+            .prefix(32)
             .map(\.example)
     }
 

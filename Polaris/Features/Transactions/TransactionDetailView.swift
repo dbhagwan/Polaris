@@ -10,6 +10,7 @@ struct TransactionDetailView: View {
     @Query private var accounts: [Account]
 
     @State private var showSplit = false
+    private let splitBill = SplitBillService()
 
     private var receipt: Receipt? {
         guard let id = transaction.receiptID else { return nil }
@@ -88,6 +89,15 @@ struct TransactionDetailView: View {
 
             Section {
                 Button("Split transaction…") { showSplit = true }
+                // Apple Cash split (iOS 27 Wallet). Only shows where the system
+                // can actually present it; hidden everywhere else.
+                if #available(iOS 27.0, *), splitBill.isAvailable, transaction.amount > 0 {
+                    Button {
+                        Task { await requestAppleCashSplit() }
+                    } label: {
+                        Label("Split the bill with Apple Cash", systemImage: "dollarsign.arrow.circlepath")
+                    }
+                }
             }
         }
         .navigationTitle("Transaction")
@@ -108,6 +118,14 @@ struct TransactionDetailView: View {
                     await appEnvironment.pipeline.applyCorrection(transaction, to: newValue, in: modelContext)
                 }
             }
+        )
+    }
+
+    private func requestAppleCashSplit() async {
+        _ = await splitBill.requestSplit(
+            amount: transaction.amount,
+            ways: 2,
+            note: transaction.normalizedDescription
         )
     }
 

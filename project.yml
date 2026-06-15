@@ -20,6 +20,14 @@ settings:
     CODE_SIGN_STYLE: Automatic
     # TODO: Set your development team before building on device.
     DEVELOPMENT_TEAM: ""
+    # iOS 27 beta features (on-device LoRA fine-tuning, multimodal receipt
+    # reading, Apple Cash bill split, conversational Siri enrichment) are
+    # compiled in only when POLARIS_IOS27 is set. Off here so CI / Xcode 26
+    # build the stable iOS 26 paths; add the flag to the line below in
+    # Xcode 27 to test on the developer beta. The beta SDK symbols are marked
+    # `VERIFY` in code — confirm them against the installed SDK first. See
+    # docs/iOS27.md.
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""  # e.g. "POLARIS_IOS27"
 
 targets:
   Polaris:

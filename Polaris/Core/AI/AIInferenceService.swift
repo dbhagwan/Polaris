@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Boundary for model-backed inference. Implementations must return validated
@@ -84,6 +85,13 @@ protocol AIInferenceService: Sendable {
     /// deterministic parser's confidence is low.
     func extractReceipt(ocrText: String) async -> ReceiptExtraction?
 
+    /// Structured extraction straight from the receipt image — no OCR step.
+    /// iOS 27's multimodal on-device model reads the photo directly, which
+    /// keeps faint thermal print, logos, and layout that flatten to noise in
+    /// an OCR text dump. Returns `nil` when image input is unavailable (every
+    /// pre-iOS-27 path and the mock), so callers fall back to the OCR route.
+    func extractReceipt(image: CGImage) async -> ReceiptExtraction?
+
     /// Turns computed profile/forecast/risk structures into concise,
     /// evidence-tied insight and recommendation copy.
     /// `monthlyCategoryHistory` maps category id → last-6-month totals
@@ -94,6 +102,12 @@ protocol AIInferenceService: Sendable {
         risk: BudgetRiskAssessment,
         monthlyCategoryHistory: [String: [Double]]
     ) async -> (insights: [SpendingInsight], recommendations: [Recommendation])
+}
+
+extension AIInferenceService {
+    /// Default: no image-based extraction. Only `FoundationModelsAIService`
+    /// on iOS 27+ overrides this; everything else stays on the OCR path.
+    func extractReceipt(image: CGImage) async -> ReceiptExtraction? { nil }
 }
 
 /// Deterministic mock used in previews, tests, and before the backend exists.

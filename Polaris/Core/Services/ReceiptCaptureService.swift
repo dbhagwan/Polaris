@@ -25,7 +25,20 @@ final class ReceiptCaptureService {
         let (text, ocrConfidence) = try await recognizeText(in: image)
         var extraction = ReceiptParser.parse(ocrText: text, ocrConfidence: ocrConfidence)
 
-        // Escalate to AI extraction when deterministic parsing is unsure.
+        // Prefer reading the photo directly: iOS 27's multimodal on-device
+        // model keeps layout, logos, and faint thermal print that flatten to
+        // noise in an OCR text dump. Returns nil on every pre-iOS-27 path, so
+        // this is a no-op fallthrough to the OCR route below.
+        if extraction.extractionConfidence < 0.85,
+           let cgImage = image.cgImage,
+           let imageExtraction = await ai.extractReceipt(image: cgImage),
+           imageExtraction.extractionConfidence > extraction.extractionConfidence
+        {
+            extraction = imageExtraction
+        }
+
+        // Escalate to AI text extraction when both the deterministic parse and
+        // the image path came up short.
         if extraction.extractionConfidence < 0.6,
            let aiExtraction = await ai.extractReceipt(ocrText: text),
            aiExtraction.extractionConfidence > extraction.extractionConfidence

@@ -14,6 +14,9 @@ final class AppEnvironment {
     let auth: AuthService
     let plaidLink: PlaidLinkService
     let receiptCapture: ReceiptCaptureService
+    /// On-device LoRA personalization of the classifier (iOS 27+); collects
+    /// the training set everywhere so it's ready when the device supports it.
+    let personalization: PersonalizationAdapter
 
     var syncState: SyncState = .idle
     var privacyModeEnabled = false
@@ -24,9 +27,11 @@ final class AppEnvironment {
         // All AI runs on-device via Apple's Foundation Models (Apple
         // Intelligence). Falls back to deterministic heuristics wherever the
         // model is unavailable (ineligible device, AI disabled, simulators).
-        let ai = FoundationModelsAIService()
+        let personalization = PersonalizationAdapter()
+        self.personalization = personalization
+        let ai = FoundationModelsAIService(personalization: personalization)
         self.ai = ai
-        self.pipeline = AIPipeline(ai: ai)
+        self.pipeline = AIPipeline(ai: ai, personalization: personalization)
         self.syncService = useMocks ? MockSyncService() : BackendSyncService(api: api)
         self.auth = AuthService()
         // Mock mode simulates the Link flow so onboarding works without

@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import FoundationModels
 
@@ -14,10 +15,32 @@ import FoundationModels
 /// degrades gracefully to `MockAIService`'s deterministic heuristics.
 struct FoundationModelsAIService: AIInferenceService {
     private let fallback = MockAIService()
+    /// On-device LoRA adapter trained on the user's own corrections. Attached
+    /// to inference sessions on iOS 27+; `nil` (or untrained) everywhere else.
+    let personalization: PersonalizationAdapter?
+
+    init(personalization: PersonalizationAdapter? = nil) {
+        self.personalization = personalization
+    }
 
     private var isModelAvailable: Bool {
         if case .available = SystemLanguageModel.default.availability { return true }
         return false
+    }
+
+    /// Builds a session, attaching the personalized model when a trained
+    /// adapter is available (iOS 27+, `POLARIS_IOS27`). Otherwise returns a
+    /// default session — identical behavior to the pre-iOS-27 path.
+    private func makeSession(
+        tools: [any Tool] = [],
+        instructions: String
+    ) async -> LanguageModelSession {
+        #if POLARIS_IOS27
+        if #available(iOS 27.0, *), let model = await personalization?.adaptedModel() {
+            return LanguageModelSession(model: model, tools: tools, instructions: instructions)
+        }
+        #endif
+        return LanguageModelSession(tools: tools, instructions: instructions)
     }
 
     private static let categoryIDs = [
@@ -51,7 +74,7 @@ struct FoundationModelsAIService: AIInferenceService {
             return await fallback.classifyTransaction(request)
         }
         do {
-            let session = LanguageModelSession(instructions: """
+            let session = await makeSession(instructions: """
                 You classify US personal-finance bank transactions into a fixed \
                 category taxonomy. Positive amounts are money out, negative are \
                 money in. Recurring monthly charges are usually subscriptions, \
@@ -89,8 +112,14 @@ struct FoundationModelsAIService: AIInferenceService {
             lines.append("Bank's coarse category hint: \(hint)")
         }
         if !request.userExamples.isEmpty {
+            // iOS 26's on-device model has a small context window, so few-shot
+            // examples are capped tight. iOS 27 expands the window (~32k
+            // tokens), so we can feed far more of the user's filing history and
+            // let the long tail generalize better.
+            let exampleCap: Int
+            if #available(iOS 27.0, *) { exampleCap = 32 } else { exampleCap = 8 }
             lines.append("How this user filed other merchants:")
-            for example in request.userExamples.prefix(8) {
+            for example in request.userExamples.prefix(exampleCap) {
                 lines.append("- \(example.merchant) → \(example.categoryID)")
             }
         }
@@ -139,7 +168,7 @@ struct FoundationModelsAIService: AIInferenceService {
             return await fallback.extractReceipt(ocrText: ocrText)
         }
         do {
-            let session = LanguageModelSession(instructions: """
+            let session = await makeSession(instructions: """
                 You extract structured data from noisy receipt OCR text. Only \
                 report values actually present in the text. Never invent line \
                 items or amounts.
@@ -148,34 +177,70 @@ struct FoundationModelsAIService: AIInferenceService {
                 to: "Extract the receipt data:\n\n\(ocrText)",
                 generating: ReceiptFields.self
             ).content
-
-            let dateFormatter = DateFormatter()
-            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-
-            return ReceiptExtraction(
-                merchant: result.merchant,
-                purchaseDate: result.purchaseDate.flatMap(dateFormatter.date(from:)),
-                subtotal: result.subtotal.map { Decimal($0) },
-                tax: result.tax.map { Decimal($0) },
-                tip: result.tip.map { Decimal($0) },
-                total: result.total.map { Decimal($0) },
-                lineItems: result.lineItems.map {
-                    ReceiptLineItem(
-                        name: $0.name,
-                        quantity: max(1, $0.quantity),
-                        price: Decimal($0.price),
-                        category: $0.category.flatMap(SpendingCategory.init(rawValue:))
-                    )
-                },
-                inferredCategory: result.category.flatMap(SpendingCategory.init(rawValue:)),
-                ocrConfidence: 0,
-                extractionConfidence: min(max(result.confidence, 0), 1),
-                returnWindowDays: result.returnWindowDays
-            )
+            return Self.extraction(from: result)
         } catch {
             return await fallback.extractReceipt(ocrText: ocrText)
         }
+    }
+
+    /// Multimodal extraction: reads the receipt photo directly on iOS 27's
+    /// on-device model, skipping the lossy OCR-to-text step. Gated behind
+    /// `POLARIS_IOS27`; returns `nil` everywhere else so callers fall back to
+    /// the OCR route.
+    func extractReceipt(image: CGImage) async -> ReceiptExtraction? {
+        #if POLARIS_IOS27
+        guard isModelAvailable, #available(iOS 27.0, *) else { return nil }
+        do {
+            let session = await makeSession(instructions: """
+                You extract structured data from a photo of a retail receipt. \
+                Only report values you can actually read in the image. Never \
+                invent line items or amounts.
+                """)
+            // VERIFY against the iOS 27 SDK: the multimodal prompt that carries
+            // an image alongside text into guided generation.
+            let result = try await session.respond(
+                to: Prompt {
+                    "Extract the receipt data from this photo."
+                    Prompt.Image(image)
+                },
+                generating: ReceiptFields.self
+            ).content
+            return Self.extraction(from: result)
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Maps the model's `ReceiptFields` onto a validated `ReceiptExtraction`.
+    /// Shared by the OCR-text and image extraction paths.
+    private static func extraction(from result: ReceiptFields) -> ReceiptExtraction {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        return ReceiptExtraction(
+            merchant: result.merchant,
+            purchaseDate: result.purchaseDate.flatMap(dateFormatter.date(from:)),
+            subtotal: result.subtotal.map { Decimal($0) },
+            tax: result.tax.map { Decimal($0) },
+            tip: result.tip.map { Decimal($0) },
+            total: result.total.map { Decimal($0) },
+            lineItems: result.lineItems.map {
+                ReceiptLineItem(
+                    name: $0.name,
+                    quantity: max(1, $0.quantity),
+                    price: Decimal($0.price),
+                    category: $0.category.flatMap(SpendingCategory.init(rawValue:))
+                )
+            },
+            inferredCategory: result.category.flatMap(SpendingCategory.init(rawValue:)),
+            ocrConfidence: 0,
+            extractionConfidence: min(max(result.confidence, 0), 1),
+            returnWindowDays: result.returnWindowDays
+        )
     }
 
     // MARK: - Natural-language transaction search
@@ -206,7 +271,7 @@ struct FoundationModelsAIService: AIInferenceService {
             return await fallback.parseTransactionQuery(text)
         }
         do {
-            let session = LanguageModelSession(instructions: """
+            let session = await makeSession(instructions: """
                 You convert a natural-language personal-finance transaction \
                 search into a structured filter. Leave every field empty that \
                 the search does not clearly state. 'Coffee' implies the dining \
@@ -291,7 +356,7 @@ struct FoundationModelsAIService: AIInferenceService {
             return await fallback.generateNarratives(profile: profile, forecast: forecast, risk: risk, monthlyCategoryHistory: monthlyCategoryHistory)
         }
         do {
-            let session = LanguageModelSession(
+            let session = await makeSession(
                 tools: monthlyCategoryHistory.isEmpty ? [] : [CategoryHistoryTool(history: monthlyCategoryHistory)],
                 instructions: """
                 You are the narration layer of a personal-finance copilot. You \
