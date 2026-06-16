@@ -14,6 +14,9 @@ final class SavingsGoal {
     /// Optional deadline; without one the reservation assumes a gentle 90 days.
     var targetDate: Date?
     var createdAt: Date = Date.now
+    /// User-defined display order, persisted so a drag-to-reorder sticks and
+    /// syncs across devices. Defaults to 0; new goals sort to the end.
+    var sortIndex: Int = 0
 
     var isCompleted: Bool { fundedAmount >= targetAmount && targetAmount > 0 }
 
@@ -42,7 +45,8 @@ final class SavingsGoal {
         targetAmount: Decimal,
         fundedAmount: Decimal = 0,
         targetDate: Date? = nil,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        sortIndex: Int = 0
     ) {
         self.id = id
         self.name = name
@@ -51,6 +55,7 @@ final class SavingsGoal {
         self.fundedAmount = fundedAmount
         self.targetDate = targetDate
         self.createdAt = createdAt
+        self.sortIndex = sortIndex
     }
 }
 

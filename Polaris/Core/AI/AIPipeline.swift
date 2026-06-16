@@ -22,9 +22,13 @@ final class AIPipeline {
 
     let categorization: CategorizationEngine
     private let ai: AIInferenceService
+    /// On-device personalization (iOS 27+). Corrections feed its training set;
+    /// `nil` in lightweight contexts like previews.
+    private let personalization: PersonalizationAdapter?
 
-    init(ai: AIInferenceService) {
+    init(ai: AIInferenceService, personalization: PersonalizationAdapter? = nil) {
         self.ai = ai
+        self.personalization = personalization
         self.categorization = CategorizationEngine(ai: ai)
     }
 
@@ -209,6 +213,10 @@ final class AIPipeline {
         transaction.categoryConfidence = 1.0
         transaction.isEssential = category.isTypicallyFixed || category == .groceries
         categorization.learn(merchant: transaction.normalizedDescription, category: category)
+        // Feed the on-device fine-tuning corpus; retrains once enough new
+        // corrections accumulate (no-op until then, and on pre-iOS-27 devices).
+        await personalization?.record(merchant: transaction.normalizedDescription, category: category)
+        await personalization?.retrainIfNeeded()
 
         // One correction fixes the merchant everywhere: retroactively apply
         // it to past transactions with the same normalized merchant.

@@ -1,0 +1,60 @@
+name: Xcode Cloud toolchains
+
+# Read-only check: lists the Xcode and macOS versions Xcode Cloud currently
+# offers, using the App Store Connect API key already in repo secrets. Run it
+# (Actions tab → "Xcode Cloud toolchains" → Run workflow) to confirm an Xcode 27
+# beta toolchain is available before wiring up the iOS 27 build. Answers
+# "can Xcode Cloud build iOS 27 yet?" without needing a Mac.
+on:
+  workflow_dispatch:
+
+jobs:
+  list-versions:
+    name: List Xcode Cloud Xcode versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_B64: ${{ secrets.ASC_KEY_B64 }}
+        run: |
+          python3 -m pip install --quiet pyjwt cryptography requests
+          python3 - <<'PY'
+          import base64, os, time, jwt, requests
+
+          key = base64.b64decode(os.environ["ASC_KEY_B64"]).decode()
+          token = jwt.encode(
+              {
+                  "iss": os.environ["ASC_ISSUER_ID"],
+                  "iat": int(time.time()),
+                  "exp": int(time.time()) + 15 * 60,
+                  "aud": "appstoreconnect-v1",
+              },
+              key,
+              algorithm="ES256",
+              headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"},
+          )
+          headers = {"Authorization": f"Bearer {token}"}
+
+          def dump(title, url):
+              print(f"\n=== {title} ===")
+              r = requests.get(url, headers=headers, timeout=30)
+              if r.status_code != 200:
+                  print(f"HTTP {r.status_code}: {r.text[:500]}")
+                  if r.status_code in (401, 403):
+                      print("(403 here usually means Xcode Cloud isn't enabled "
+                            "for this team yet — turn it on once in App Store "
+                            "Connect, then re-run.)")
+                  return
+              for item in r.json().get("data", []):
+                  a = item.get("attributes", {})
+                  name = a.get("name") or a.get("version") or item.get("id")
+                  testflight = a.get("testFlightDescription")
+                  print(f"- {name}" + (f"  ({testflight})" if testflight else ""))
+
+          dump("Xcode versions available in Xcode Cloud",
+               "https://api.appstoreconnect.apple.com/v1/ciXcodeVersions?limit=200")
+          dump("macOS versions available in Xcode Cloud",
+               "https://api.appstoreconnect.apple.com/v1/ciMacOsVersions?limit=200")
+          PY

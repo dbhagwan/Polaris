@@ -6,15 +6,18 @@ import SwiftUI
 struct GoalsView: View {
     @Environment(AppEnvironment.self) private var appEnvironment
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \SavingsGoal.createdAt) private var goals: [SavingsGoal]
+    // Honor the user's drag order first, falling back to creation order for
+    // goals saved before reordering existed (all sortIndex 0).
+    @Query(sort: [SortDescriptor(\SavingsGoal.sortIndex), SortDescriptor(\SavingsGoal.createdAt)])
+    private var goals: [SavingsGoal]
 
     @State private var editingGoal: SavingsGoal?
     @State private var showNewGoal = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Theme.sectionSpacing) {
-                if goals.isEmpty {
+        Group {
+            if goals.isEmpty {
+                ScrollView {
                     EmptyStateView(
                         systemImage: "flag.checkered",
                         title: "No goals yet",
@@ -23,22 +26,30 @@ struct GoalsView: View {
                         action: { showNewGoal = true }
                     )
                     .padding(.top, 60)
-                } else {
+                    .padding()
+                }
+            } else {
+                List {
                     ForEach(goals) { goal in
                         goalCard(goal)
+                            .glassListRow()
                     }
+                    .onMove(perform: reorder)
+
                     Card {
                         Label {
-                            Text("Active goals reserve \(totalReservation.currency())/day from safe-to-spend — tap “Why this number?” on Home to see it.")
+                            Text("Active goals reserve \(totalReservation.currency())/day from safe-to-spend — tap “Why this number?” on Home to see it. Drag to reorder.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         } icon: {
                             Image(systemName: "sparkles").foregroundStyle(Theme.accent)
                         }
                     }
+                    .glassListRow()
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
-            .padding()
         }
         .background(AppBackground())
         .navigationTitle("Goals")
@@ -59,6 +70,17 @@ struct GoalsView: View {
 
     private var totalReservation: Decimal {
         goals.filter { !$0.isCompleted }.reduce(0) { $0 + $1.dailyReservation() }
+    }
+
+    /// Persist a drag-to-reorder by rewriting every goal's `sortIndex` to its
+    /// new position, so the order sticks and syncs across devices.
+    private func reorder(from offsets: IndexSet, to destination: Int) {
+        var ordered = goals
+        ordered.move(fromOffsets: offsets, toOffset: destination)
+        for (index, goal) in ordered.enumerated() {
+            goal.sortIndex = index
+        }
+        save()
     }
 
     private func goalCard(_ goal: SavingsGoal) -> some View {
@@ -176,7 +198,13 @@ struct GoalEditorView: View {
 
     private func save() {
         let saved = goal ?? SavingsGoal(name: name, targetAmount: Decimal(target))
-        if goal == nil { modelContext.insert(saved) }
+        if goal == nil {
+            // New goals sort to the end of the user's order.
+            let lastIndex = (try? modelContext.fetch(FetchDescriptor<SavingsGoal>()))?
+                .map(\.sortIndex).max() ?? -1
+            saved.sortIndex = lastIndex + 1
+            modelContext.insert(saved)
+        }
         saved.name = name
         saved.emoji = emoji.isEmpty ? "🎯" : String(emoji.prefix(2))
         saved.targetAmount = Decimal(target)
