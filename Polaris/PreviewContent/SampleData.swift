@@ -16,7 +16,8 @@ enum SampleData {
         let chase = LinkedInstitution(providerItemID: "item-chase", name: "Chase", lastSyncedAt: now)
         let amex = LinkedInstitution(providerItemID: "item-amex", name: "American Express", lastSyncedAt: now)
         let fidelity = LinkedInstitution(providerItemID: "item-fidelity", name: "Fidelity", lastSyncedAt: now)
-        [chase, amex, fidelity].forEach(context.insert)
+        let synchrony = LinkedInstitution(providerItemID: "item-synchrony", name: "Synchrony", lastSyncedAt: now)
+        [chase, amex, fidelity, synchrony].forEach(context.insert)
 
         let checking = Account(
             providerAccountID: "acc-checking", institutionName: "Chase", name: "Total Checking",
@@ -31,7 +32,20 @@ enum SampleData {
         let creditCard = Account(
             providerAccountID: "acc-amex", institutionName: "American Express", name: "Gold Card",
             kind: .creditCard, subtype: "credit card", mask: "1005",
-            currentBalance: 1_624.55, creditLimit: 15_000
+            currentBalance: 1_624.55, creditLimit: 15_000,
+            apr: 24.99, minimumPayment: 40
+        )
+        let storeCard = Account(
+            providerAccountID: "acc-store", institutionName: "Synchrony", name: "Store Card",
+            kind: .creditCard, subtype: "credit card", mask: "2231",
+            currentBalance: 740, creditLimit: 2_500,
+            apr: 18.99, minimumPayment: 25
+        )
+        let autoLoan = Account(
+            providerAccountID: "acc-auto", institutionName: "Chase", name: "Auto Loan",
+            kind: .loan, subtype: "auto", mask: "9087",
+            currentBalance: 12_800,
+            apr: 6.49, minimumPayment: 320
         )
         let brokerage = Account(
             providerAccountID: "acc-brokerage", institutionName: "Fidelity", name: "Individual Brokerage",
@@ -41,8 +55,10 @@ enum SampleData {
         checking.institution = chase
         savings.institution = chase
         creditCard.institution = amex
+        storeCard.institution = synchrony
+        autoLoan.institution = chase
         brokerage.institution = fidelity
-        [checking, savings, creditCard, brokerage].forEach(context.insert)
+        [checking, savings, creditCard, storeCard, autoLoan, brokerage].forEach(context.insert)
 
         // MARK: Transactions — 6 months
 

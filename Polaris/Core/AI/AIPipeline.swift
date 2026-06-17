@@ -141,6 +141,12 @@ final class AIPipeline {
             let goalReservation = goals
                 .filter { !$0.isCompleted }
                 .reduce(Decimal(0)) { $0 + $1.dailyReservation() }
+            // The extra debt payment is monthly; spread it across the period so
+            // it reserves from the daily allowance, just like goals.
+            let hasDebt = accounts.contains { $0.kind.isLiability && !$0.isClosed && $0.currentBalance > 0 }
+            let debtExtra = userProfile?.debtMonthlyExtra ?? 0
+            let periodDays = max(1, forecast.periodStart.daysUntil(forecast.periodEnd))
+            let debtReservation = (hasDebt && debtExtra > 0) ? debtExtra / Decimal(periodDays) : 0
             let decision = SafeToSpendEngine.decide(
                 budget: budget,
                 forecast: forecast,
@@ -148,6 +154,7 @@ final class AIPipeline {
                 transactions: transactions,
                 excludedCategories: excluded,
                 goalDailyReservation: goalReservation,
+                debtDailyReservation: debtReservation,
                 rolloverCredit: RolloverLedger.unspentCredit(transactions: transactions)
             )
             safeToSpend = decision

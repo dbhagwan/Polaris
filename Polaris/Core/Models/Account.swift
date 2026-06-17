@@ -85,6 +85,11 @@ final class Account {
     var isHidden: Bool = false
     var roleRaw: String = "full"
     var isClosed: Bool = false
+    /// Annual percentage rate as a percentage number (e.g. 19.99 = 19.99%).
+    /// Only meaningful for liabilities; powers the debt-payoff planner.
+    var apr: Decimal?
+    /// Monthly minimum payment for a liability, when known.
+    var minimumPayment: Decimal?
 
     var institution: LinkedInstitution?
 
@@ -118,7 +123,9 @@ final class Account {
         currencyCode: String = "USD",
         isHidden: Bool = false,
         role: AccountRole = .full,
-        isClosed: Bool = false
+        isClosed: Bool = false,
+        apr: Decimal? = nil,
+        minimumPayment: Decimal? = nil
     ) {
         self.id = id
         self.providerAccountID = providerAccountID
@@ -134,5 +141,7 @@ final class Account {
         self.isHidden = isHidden
         self.roleRaw = role.rawValue
         self.isClosed = isClosed
+        self.apr = apr
+        self.minimumPayment = minimumPayment
     }
 }

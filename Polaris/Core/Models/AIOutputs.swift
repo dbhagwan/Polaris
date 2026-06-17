@@ -138,6 +138,8 @@ struct SafeToSpendDecision: Codable, Sendable, Equatable {
     var rolloverCredit: Decimal = 0
     /// Per-day amount reserved by active savings goals.
     var goalDailyReservation: Decimal = 0
+    /// Per-day amount reserved toward the extra debt payment.
+    var debtDailyReservation: Decimal = 0
 }
 
 enum InsightSeverity: String, Codable, Sendable {

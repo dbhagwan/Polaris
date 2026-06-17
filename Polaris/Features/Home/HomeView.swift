@@ -13,6 +13,7 @@ struct HomeView: View {
     @Query(sort: \Receipt.capturedAt, order: .reverse) private var receipts: [Receipt]
     @Query private var transactions: [Transaction]
     @Query(sort: \SavingsGoal.createdAt) private var goals: [SavingsGoal]
+    @Query private var profiles: [UserProfile]
 
     @State private var showExplanation = false
     @State private var showMonthlyStory = false
@@ -83,6 +84,7 @@ struct HomeView: View {
                 UpcomingBillsCard(charges: Array(forecast.upcomingRecurringCharges.prefix(4)))
             }
             goalsCard
+            debtCard
             recentReceiptsCard
             netWorthCard
             if let forecast = pipeline.forecast {
@@ -203,6 +205,65 @@ struct HomeView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private var liabilities: [Account] {
+        accounts.filter { $0.kind.isLiability && !$0.isClosed && $0.currentBalance > 0 }
+    }
+
+    /// Quick payoff projection from the user's current strategy + extra payment.
+    private var debtProjection: DebtPayoffEngine.Projection {
+        let profile = profiles.first
+        let debts = liabilities.map { account in
+            DebtPayoffEngine.Debt(
+                id: account.id,
+                name: account.name,
+                balance: account.currentBalance,
+                aprPercent: account.apr ?? 0,
+                minimumPayment: account.minimumPayment ?? DebtView.defaultMinimum(for: account.currentBalance)
+            )
+        }
+        return DebtPayoffEngine.project(
+            debts: debts,
+            strategy: profile?.debtStrategy ?? .avalanche,
+            monthlyExtra: profile?.debtMonthlyExtra ?? 0
+        )
+    }
+
+    /// Shown only when the user carries a balance. Pushes the full planner.
+    @ViewBuilder
+    private var debtCard: some View {
+        if !liabilities.isEmpty {
+            NavigationLink {
+                DebtView()
+            } label: {
+                Card(title: "Debt Payoff", systemImage: "creditcard") {
+                    let total = liabilities.reduce(Decimal(0)) { $0 + $1.currentBalance }
+                    HStack(alignment: .firstTextBaseline) {
+                        AmountText(amount: total, font: .title2, showCents: false)
+                        Spacer()
+                        if debtProjection.isProjectable, debtProjection.monthsToDebtFree > 0 {
+                            Label(
+                                "Debt-free \(debtProjection.payoffDate.formatted(.dateTime.month(.abbreviated).year()))",
+                                systemImage: "flag.checkered"
+                            )
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.positive)
+                        }
+                    }
+                    HStack {
+                        Text("\(liabilities.count) \(liabilities.count == 1 ? "liability" : "liabilities")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var monthlyStoryCard: some View {

@@ -33,6 +33,7 @@ enum SafeToSpendEngine {
         transactions: [Transaction],
         excludedCategories: [SpendingCategory] = [],
         goalDailyReservation: Decimal = 0,
+        debtDailyReservation: Decimal = 0,
         rolloverCredit: Decimal = 0,
         configuration: Configuration = .default,
         asOf now: Date = .now
@@ -75,9 +76,14 @@ enum SafeToSpendEngine {
         let baseRemaining = max(0, remainingDiscretionary - upcomingDiscretionary - unreservedEssential)
         var baseDaily = baseRemaining / Decimal(remainingDays)
 
-        // Savings goals take their cut off the top, visibly.
+        // Savings goals and the extra debt payment both take their cut off the
+        // top, visibly — saving and deleveraging happen on pace, not from
+        // whatever's left over.
         if goalDailyReservation > 0 {
             baseDaily = max(0, baseDaily - goalDailyReservation)
+        }
+        if debtDailyReservation > 0 {
+            baseDaily = max(0, baseDaily - debtDailyReservation)
         }
 
         // --- Behavioral adjustment layer ---
@@ -113,6 +119,9 @@ enum SafeToSpendEngine {
         if goalDailyReservation > 0 {
             reasons.append("Savings goals reserve \(goalDailyReservation.currency())/day")
         }
+        if debtDailyReservation > 0 {
+            reasons.append("Extra debt payment reserves \(debtDailyReservation.currency())/day")
+        }
         if reasons.isEmpty { reasons.append("No behavioral adjustment — spending pattern is steady") }
 
         // Rollover smoothing: yesterday's unspent allowance rolls in, capped
@@ -127,7 +136,7 @@ enum SafeToSpendEngine {
         let week = max(0, adjustedDaily * Decimal(min(7, remainingDays)) + appliedRollover)
         let monthRemaining = max(
             0,
-            (baseRemaining - goalDailyReservation * Decimal(remainingDays)) * Decimal(adjustment)
+            (baseRemaining - (goalDailyReservation + debtDailyReservation) * Decimal(remainingDays)) * Decimal(adjustment)
         )
 
         let confidence = min(0.95, forecast.confidence * (budget.categories.isEmpty ? 0.85 : 1.0))
@@ -146,7 +155,8 @@ enum SafeToSpendEngine {
             adjustmentReasons: reasons,
             excludedCategories: excludedCategories,
             rolloverCredit: appliedRollover,
-            goalDailyReservation: goalDailyReservation
+            goalDailyReservation: goalDailyReservation,
+            debtDailyReservation: debtDailyReservation
         )
     }
 
