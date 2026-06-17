@@ -1,27 +1,7 @@
 import Foundation
 
-/// Debt-payoff strategy. Both order the *extra* payment; minimums are always
-/// paid on every debt first.
-enum DebtStrategy: String, Codable, CaseIterable, Sendable {
-    /// Highest APR first — mathematically minimizes total interest.
-    case avalanche
-    /// Smallest balance first — fastest visible wins, best for momentum.
-    case snowball
-
-    var displayName: String {
-        switch self {
-        case .avalanche: "Avalanche"
-        case .snowball: "Snowball"
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .avalanche: "Targets the highest interest rate first — pays the least interest overall."
-        case .snowball: "Clears the smallest balance first — quick wins to keep momentum."
-        }
-    }
-}
+// `DebtStrategy` lives in Core/Models (shared with the watch/widget targets,
+// which compile `UserProfile`). The engine below is app-only.
 
 /// Deterministic debt-payoff simulator. Pure value types in, pure projection
 /// out — no SwiftData, no I/O — so it's fully unit-testable. Mirrors how

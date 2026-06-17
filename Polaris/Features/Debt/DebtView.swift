@@ -240,7 +240,7 @@ struct DebtView: View {
 
     private func aprMinSummary(_ account: Account) -> String {
         let apr = account.apr ?? 0
-        let aprText = apr > 0 ? "\(apr.formatted(.number.precision(.fractionLength(0...2))))% APR" : "Set APR"
+        let aprText = apr > 0 ? "\(apr.doubleValue.formatted(.number.precision(.fractionLength(0...2))))% APR" : "Set APR"
         let min = account.minimumPayment ?? Self.defaultMinimum(for: account.currentBalance)
         return "\(aprText) · \(min.currency(currencyCode, showCents: false))/mo min"
     }
