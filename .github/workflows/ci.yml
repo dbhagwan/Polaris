@@ -21,6 +21,53 @@ jobs:
       - run: npm install
       - run: npm run typecheck
 
+  unit-tests:
+    name: Unit tests (logic)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Pick a simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)
+          best = None
+          for runtime, devs in data['devices'].items():
+              m = re.search(r'iOS-(\d+)-(\d+)', runtime)
+              if not m:
+                  continue
+              version = (int(m.group(1)), int(m.group(2)))
+              for d in devs:
+                  if d['name'].startswith('iPhone'):
+                      cand = (version, 'Pro' in d['name'], d['udid'])
+                      if best is None or cand > best:
+                          best = cand
+          print(best[2] if best else '')")
+          if [ -z "$UDID" ]; then echo "No iPhone simulator available"; xcrun simctl list devices; exit 1; fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run logic unit tests (PolarisTests only)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Polaris.xcodeproj \
+            -scheme Polaris \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:PolarisTests \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
   ios:
     name: iOS build + simulator screenshot
     runs-on: macos-15

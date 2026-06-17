@@ -87,6 +87,15 @@ final class UserProfile {
     var excludedSafeToSpendCategories: [String] = []
     var onboardingCompleted: Bool = false
     var createdAt: Date = Date.now
+    /// Debt-payoff plan: strategy and the extra payment (beyond minimums) the
+    /// user commits per month. The extra reserves from safe-to-spend.
+    var debtStrategyRaw: String = "avalanche"
+    var debtMonthlyExtra: Decimal = 0
+
+    var debtStrategy: DebtStrategy {
+        get { DebtStrategy(rawValue: debtStrategyRaw) ?? .avalanche }
+        set { debtStrategyRaw = newValue.rawValue }
+    }
 
     init(
         id: UUID = UUID(),
@@ -97,7 +106,9 @@ final class UserProfile {
         appLockEnabled: Bool = false,
         excludedSafeToSpendCategories: [String] = [],
         onboardingCompleted: Bool = false,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        debtStrategy: DebtStrategy = .avalanche,
+        debtMonthlyExtra: Decimal = 0
     ) {
         self.id = id
         self.appleUserID = appleUserID
@@ -108,6 +119,8 @@ final class UserProfile {
         self.excludedSafeToSpendCategories = excludedSafeToSpendCategories
         self.onboardingCompleted = onboardingCompleted
         self.createdAt = createdAt
+        self.debtStrategyRaw = debtStrategy.rawValue
+        self.debtMonthlyExtra = debtMonthlyExtra
     }
 }
 

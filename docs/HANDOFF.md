@@ -136,6 +136,27 @@ To enable the flag locally instead: set
    Manrope UI. The user rejected: candy/emoji styles, a pink theme, and overly
    sparse layouts; liked notbor.ing's polish. This was never built in SwiftUI.
 
+## Debt Payoff Planner (added)
+
+A full debt-payoff feature, built to mirror the Goals→Safe-to-Spend pattern:
+- `Core/AI/DebtPayoffEngine.swift` — pure, deterministic avalanche/snowball
+  simulator (month-by-month interest accrual, minimum payments, snowball roll of
+  freed minimums, extra-payment targeting). Returns debt-free date, total
+  interest, payoff order, and interest/months saved vs. minimums.
+- `Account` gained `apr` + `minimumPayment` (optional, CloudKit-safe);
+  `UserProfile` gained `debtStrategy` + `debtMonthlyExtra`.
+- The extra monthly payment reserves from safe-to-spend exactly like goals:
+  `SafeToSpendDecision.debtDailyReservation`, threaded through
+  `SafeToSpendEngine.decide` and computed in `AIPipeline.recompute`, surfaced in
+  the explanation drawer (`HomeCards.swift`).
+- `Features/Debt/DebtView.swift` (strategy picker, extra-payment slider, payoff
+  order, per-liability APR/min editor) + a Home "Debt Payoff" card. Sample data
+  now seeds three liabilities so avalanche vs. snowball differ.
+- **First unit test target**: `PolarisTests` (`bundle.unit-test` in
+  `project.yml`, added to the scheme) with `DebtPayoffEngineTests`, plus a
+  dedicated `unit-tests` CI job in `ci.yml` that runs only those tests — a fast,
+  reliable signal independent of the flaky UI screenshot suite.
+
 ## Hard constraints (keep these)
 
 - **Secrets**: Plaid access tokens + model API keys live **only in `Backend/`**,

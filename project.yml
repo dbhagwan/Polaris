@@ -140,6 +140,18 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris.uitests
         GENERATE_INFOPLIST_FILE: YES
 
+  PolarisTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - PolarisTests
+    dependencies:
+      - target: Polaris
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dbhagwan.polaris.tests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   Polaris:
     build:
@@ -150,4 +162,5 @@ schemes:
     test:
       config: Debug
       targets:
+        - PolarisTests
         - PolarisUITests
